@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Student Behavior Tracking</h2>
+    
+    <!-- Monitoring Status Section -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>Behavior Monitoring Status</h4>
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">Global Status: <span id="global-status-indicator" class="badge bg-secondary">Checking...</span></p>
+                    <p class="mb-0">Use the monitoring controls in the right panel to start/stop monitoring across all pages.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-info" onclick="window.location.href='{{ url_for('student.behavior_tracking') }}'">
+                        <i class="fas fa-sync"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4>Live Focus & Frustration Status</h4>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Attention Status</h5>
+                    <span id="focus-badge" class="badge bg-secondary" style="font-size:1.2em;">Unknown</span>
+                    <div class="mt-3">
+                        <b>Focus Level:</b> <span id="focus-level">N/A</span>%<br>
+                        <b>Frustration Level:</b> <span id="frustration-level">N/A</span>%<br>
+                        <b>Last Updated:</b> <span id="last-updated">N/A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h4>AI Learning Analysis & Suggestions</h4>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('student.get_behavior_suggestions') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="live_focus" id="live_focus_input" value="">
+                    <input type="hidden" name="live_frustration" id="live_frustration_input" value="">
+                    <button type="submit" class="btn btn-primary">Get AI Suggestions</button>
+                </form>
+                
+                {% if ai_suggestions %}
+                <div class="mt-4">
+                    <h5>Analysis Results</h5>
+                    {% if ai_suggestions.focus_analysis %}
+                    <div class="alert {% if ai_suggestions.focus_analysis.is_focused %}alert-success{% else %}alert-warning{% endif %}">
+                        <h6>Focus Analysis</h6>
+                        <p>{{ ai_suggestions.focus_analysis.message }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ai_suggestions.recommendations %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">General Recommendations</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                {% for rec in ai_suggestions.recommendations %}
+                                <li class="list-group-item">
+                                    <strong>{{ rec.title }}</strong>
+                                    <p class="mb-0">{{ rec.description }}</p>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ai_suggestions.course_suggestions %}
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Course & Learning Environment Suggestions</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                {% for suggestion in ai_suggestions.course_suggestions %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ suggestion.title }}</strong>
+                                            <span class="badge {% if suggestion.type == 'course_change' %}bg-primary{% elif suggestion.type == 'instructor_change' %}bg-warning{% else %}bg-info{% endif %} ms-2">
+                                                {{ suggestion.type.replace('_', ' ').title() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p class="mb-0 mt-2">{{ suggestion.description }}</p>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mt-4">Emotion Log History</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Focus Score</th>
+                <th>Frustration Score</th>
+                <th>Source Data Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for log in logs %}
+            <tr>
+                <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    <span class="badge {% if log.focus_score >= 0.7 %}bg-success{% elif log.focus_score >= 0.4 %}bg-warning{% else %}bg-danger{% endif %}">
+                        {{ "%.1f"|format(log.focus_score * 100) }}%
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {% if log.frustration_score >= 0.7 %}bg-danger{% elif log.frustration_score >= 0.4 %}bg-warning{% else %}bg-success{% endif %}">
+                        {{ "%.1f"|format(log.frustration_score * 100) }}%
+                    </span>
+                </td>
+                <td><pre style="white-space: pre-wrap;">{{ log.source_data_summary }}</pre></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+// Behavior tracking specific scripts
+let trackingPollingInterval = null;
+
+// Initialize tracking page
+document.addEventListener('DOMContentLoaded', function() {
+    updateTrackingStatus();
+    startTrackingPolling();
+});
+
+function updateTrackingStatus() {
+    fetch('/student/monitoring_status')
+        .then(response => response.json())
+        .then(data => {
+            // Update global status indicator
+            const globalIndicator = document.getElementById('global-status-indicator');
+            if (data.is_monitoring) {
+                globalIndicator.textContent = 'Active';
+                globalIndicator.className = 'badge bg-success';
+            } else {
+                globalIndicator.textContent = 'Not Active';
+                globalIndicator.className = 'badge bg-secondary';
+            }
+            
+            // Update focus status
+            let focusBadge = document.getElementById('focus-badge');
+            let focusLevel = document.getElementById('focus-level');
+            let frustrationLevel = document.getElementById('frustration-level');
+            let lastUpdated = document.getElementById('last-updated');
+            
+            if (data.avg_focus !== null && data.avg_focus !== undefined) {
+                focusLevel.textContent = formatFocusLevel(data.avg_focus);
+                focusBadge.textContent = getFocusStatusText(data.avg_focus);
+                focusBadge.className = 'badge ' + getFocusBadgeClass(data.avg_focus);
+            } else {
+                focusLevel.textContent = 'N/A';
+                focusBadge.textContent = 'Unknown';
+                focusBadge.className = 'badge bg-secondary';
+            }
+            
+            if (data.avg_frustration !== null && data.avg_frustration !== undefined) {
+                frustrationLevel.textContent = formatFrustrationLevel(data.avg_frustration);
+            } else {
+                frustrationLevel.textContent = 'N/A';
+            }
+            
+            lastUpdated.textContent = data.last_updated ? new Date(data.last_updated).toLocaleString() : 'N/A';
+            
+            // Update hidden fields for AI prompt
+            document.getElementById('live_focus_input').value = data.avg_focus !== null && data.avg_focus !== undefined ? Math.round(data.avg_focus * 100) : '';
+            document.getElementById('live_frustration_input').value = data.avg_frustration !== null && data.avg_frustration !== undefined ? Math.round(data.avg_frustration * 100) : '';
+        })
+        .catch(error => {
+            console.error('Error updating tracking status:', error);
+        });
+}
+
+function startTrackingPolling() {
+    if (trackingPollingInterval) return;
+    trackingPollingInterval = setInterval(updateTrackingStatus, 10000); // Poll every 10 seconds
+}
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    if (trackingPollingInterval) {
+        clearInterval(trackingPollingInterval);
+    }
+});
+</script>
+{% endblock %} 

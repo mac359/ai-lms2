@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Submissions for Assignment: {{ assignment.title }}</h2>
+    <p>{{ assignment.instructions }}</p>
+    <a href="{{ url_for('instructor.manage_course', course_id=course.id) }}" class="btn btn-secondary mb-3">Back to Manage Course</a>
+    <div class="card">
+        <div class="card-body">
+            {% if submissions %}
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Student</th>
+                            <th>Submitted At</th>
+                            <th>Answer</th>
+                            <th>Grade</th>
+                            <th>Feedback</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in submissions %}
+                        <tr>
+                            <td>{{ sub.student.email if sub.student else 'Unknown' }}</td>
+                            <td>{{ sub.submitted_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                            <td><div class="border rounded p-2 bg-light">{{ sub.comments }}</div></td>
+                            <td>{{ sub.grade if sub.grade is not none else '—' }}</td>
+                            <td>{{ sub.feedback or '—' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('instructor.grade_assignment', course_id=course.id, assignment_id=assignment.id, submission_id=sub.id) }}" class="row g-2 align-items-center">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="col-auto">
+                                        <input type="number" step="0.1" min="0" max="100" class="form-control form-control-sm" name="grade" value="{{ sub.grade or '' }}" placeholder="Grade" required>
+                                    </div>
+                                    <div class="col-auto">
+                                        <input type="text" class="form-control form-control-sm" name="feedback" value="{{ sub.feedback or '' }}" placeholder="Feedback">
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-success btn-sm">Save</button>
+                                    </div>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-muted">No submissions yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

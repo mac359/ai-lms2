@@ -1,0 +1,416 @@
+{% extends 'admin/base.html' %}
+{% block title %}View Course - Admin Panel{% endblock %}
+{% block page_title %}Course Details{% endblock %}
+{% block page_subtitle %}{{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-book me-2"></i>{{ course.title }}
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('admin.edit_course', course_id=course.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i>Edit Course
+            </a>
+            <a href="{{ url_for('admin.courses') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Courses
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Course Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-2"></i>Course Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong>Course Code:</strong>
+                            <p>{{ course.code or 'Not specified' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Category:</strong>
+                            <p>{{ course.category|title if course.category else 'Not specified' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Difficulty Level:</strong>
+                            <p>{{ course.level|title if course.level else 'Not specified' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Maximum Students:</strong>
+                            <p>{{ course.max_students or 'No limit' }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Status:</strong>
+                            <p>
+                                {% if course.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Created:</strong>
+                            <p>{{ course.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Description:</strong>
+                        <p>{{ course.description }}</p>
+                    </div>
+                    
+                    {% if course.syllabus %}
+                    <div class="mb-3">
+                        <strong>Syllabus:</strong>
+                        <p>{{ course.syllabus }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if course.prerequisites %}
+                    <div class="mb-3">
+                        <strong>Prerequisites:</strong>
+                        <p>{{ course.prerequisites }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if course.learning_outcomes %}
+                    <div class="mb-3">
+                        <strong>Learning Outcomes:</strong>
+                        <p>{{ course.learning_outcomes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Course Schedule -->
+            {% if course.start_date or course.end_date or course.meeting_days or course.meeting_time %}
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar me-2"></i>Course Schedule
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if course.start_date %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Start Date:</strong>
+                            <p>{{ course.start_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if course.end_date %}
+                        <div class="col-md-6 mb-3">
+                            <strong>End Date:</strong>
+                            <p>{{ course.end_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if course.meeting_days %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Meeting Days:</strong>
+                            <p>
+                                {% set days = course.meeting_days.split(',') %}
+                                {% for day in days %}
+                                    <span class="badge bg-primary me-1">{{ day|title }}</span>
+                                {% endfor %}
+                            </p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if course.meeting_time %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Meeting Time:</strong>
+                            <p>{{ course.meeting_time }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Instructor Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Instructor
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if course.instructor %}
+                        <div class="text-center mb-3">
+                            <i class="fas fa-user-circle fa-3x text-gray-300"></i>
+                        </div>
+                        <h6 class="text-center">{{ course.instructor.instructor_profile.name if course.instructor.instructor_profile else 'No name set' }}</h6>
+                        <p class="text-center text-muted">{{ course.instructor.email }}</p>
+                        
+                        {% if course.instructor.instructor_profile %}
+                            {% if course.instructor.instructor_profile.department %}
+                            <div class="mb-2">
+                                <strong>Department:</strong>
+                                <p>{{ course.instructor.instructor_profile.department }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if course.instructor.instructor_profile.office_location %}
+                            <div class="mb-2">
+                                <strong>Office:</strong>
+                                <p>{{ course.instructor.instructor_profile.office_location }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if course.instructor.instructor_profile.office_hours %}
+                            <div class="mb-2">
+                                <strong>Office Hours:</strong>
+                                <p>{{ course.instructor.instructor_profile.office_hours }}</p>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <p class="text-muted text-center">No instructor assigned</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Course Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar me-2"></i>Statistics
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <div class="h4 text-primary">{{ course.students|length if course.students else 0 }}</div>
+                                <div class="text-xs text-muted">Students</div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <div class="h4 text-success">{{ course.quizzes|length if course.quizzes else 0 }}</div>
+                                <div class="text-xs text-muted">Quizzes</div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <div class="h4 text-warning">{{ course.assignments|length if course.assignments else 0 }}</div>
+                                <div class="text-xs text-muted">Assignments</div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-3">
+                                <div class="h4 text-info">{{ course.materials|length if course.materials else 0 }}</div>
+                                <div class="text-xs text-muted">Materials</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Course Settings -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-cog me-2"></i>Settings
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <i class="fas fa-{% if course.allow_enrollment %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                        Student Enrollment
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-{% if course.enable_quizzes %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                        Quizzes Enabled
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-{% if course.enable_assignments %}check text-success{% else %}times text-danger{% endif %} me-2"></i>
+                        Assignments Enabled
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students List -->
+    {% if course.students %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-users me-2"></i>Enrolled Students ({{ course.students|length }})
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Enrolled Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in course.students %}
+                        <tr>
+                            <td>
+                                {% if student.student_profile %}
+                                    {{ student.student_profile.name }}
+                                {% else %}
+                                    <span class="text-muted">No name set</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ student.email }}</td>
+                            <td>
+                                {% if student in course.students %}
+                                    {{ course.created_at.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if student.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('admin.edit_user', user_id=student.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quizzes List -->
+    {% if course.quizzes %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-question-circle me-2"></i>Course Quizzes ({{ course.quizzes|length }})
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Questions</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quiz in course.quizzes %}
+                        <tr>
+                            <td>{{ quiz.title }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ quiz.quiz_type|title }}</span>
+                            </td>
+                            <td>{{ quiz.questions|length if quiz.questions else 0 }}</td>
+                            <td>{{ quiz.duration }} minutes</td>
+                            <td>
+                                {% if quiz.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('quiz.view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Assignments List -->
+    {% if course.assignments %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-tasks me-2"></i>Course Assignments ({{ course.assignments|length }})
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Title</th>
+                            <th>Due Date</th>
+                            <th>Points</th>
+                            <th>Submissions</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assignment in course.assignments %}
+                        <tr>
+                            <td>{{ assignment.title }}</td>
+                            <td>{{ assignment.due_date.strftime('%Y-%m-%d') if assignment.due_date else 'No due date' }}</td>
+                            <td>{{ assignment.points or 0 }}</td>
+                            <td>{{ assignment.submissions|length if assignment.submissions else 0 }}</td>
+                            <td>
+                                {% if assignment.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('assignment.view_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Add any interactive functionality here
+document.addEventListener('DOMContentLoaded', function() {
+    // You can add JavaScript for interactivity
+    console.log('Course view loaded');
+});
+</script>
+{% endblock %} 

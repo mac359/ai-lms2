@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">AI Chatbot Assistant</h2>
+        </div>
+    </div>
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm" style="min-height: 400px;">
+                <div class="card-body d-flex flex-column" style="height: 400px;">
+                    <div class="flex-grow-1 mb-3" id="chat-messages" style="overflow-y: auto;">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                    <form class="d-flex mt-auto" id="chat-form" autocomplete="off">
+                        <input type="text" class="form-control me-2" id="chat-input" placeholder="Type your message..." required>
+                        <button class="btn btn-primary" type="submit">Send</button>
+                    </form>
+                    <div id="chat-loading" class="text-center mt-2" style="display:none;">
+                        <div class="spinner-border text-primary" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span class="ms-2">AI is thinking...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Determine role-based endpoint
+    let chatEndpoint = window.location.pathname.startsWith('/instructor') ? '/instructor/ai-chatbot' : '/student/ai-chatbot';
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatLoading = document.getElementById('chat-loading');
+
+    function appendMessage(sender, text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'mb-2' + (sender === 'You' ? ' text-end' : '');
+        msgDiv.innerHTML = `<span class="badge bg-${sender === 'You' ? 'secondary' : 'primary'}">${sender}</span> ${text}`;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Add greeting message when page loads
+    window.addEventListener('DOMContentLoaded', function() {
+        const greeting = "Hello! I'm your AI learning assistant. I can help you with:\n" +
+                        "• Course-related questions\n" +
+                        "• Assignment guidance\n" +
+                        "• Study tips and resources\n" +
+                        "• General learning support\n\n" +
+                        "How can I assist you today?";
+        appendMessage('AI', greeting);
+    });
+
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = chatInput.value.trim();
+        if (!message) return;
+        appendMessage('You', message);
+        chatInput.value = '';
+        chatInput.disabled = true;
+        chatLoading.style.display = 'block';
+        fetch(chatEndpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.response) {
+                appendMessage('AI', data.response);
+            } else {
+                appendMessage('AI', data.error || 'Sorry, something went wrong.');
+            }
+        })
+        .catch(() => {
+            appendMessage('AI', 'Sorry, there was a network error.');
+        })
+        .finally(() => {
+            chatInput.disabled = false;
+            chatInput.focus();
+            chatLoading.style.display = 'none';
+        });
+    });
+</script>
+{% endblock %} 

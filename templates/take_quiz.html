@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ quiz.title }}</h2>
+            <p class="lead">{{ quiz.description }}</p>
+            
+            {% if quiz.time_limit %}
+            <div class="alert alert-info">
+                Time Limit: {{ quiz.time_limit }} minutes
+                <div id="timer" class="float-end"></div>
+            </div>
+            {% endif %}
+            
+            <form method="POST" id="quizForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% for question in quiz.questions %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Question {{ loop.index }}</h5>
+                        <p class="card-text">{{ question.question_text }}</p>
+                        {% set opts = question.options | from_json if question.options else [] %}
+                        {% for opt in opts %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ opt }}" id="q{{ question.id }}_{{ loop.index }}">
+                            <label class="form-check-label" for="q{{ question.id }}_{{ loop.index }}">
+                                {{ opt }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-primary">Submit Quiz</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if quiz.time_limit %}
+<script>
+let totalSeconds = {{ quiz.time_limit * 60 }};
+const timerEl = document.getElementById('timer');
+const form = document.getElementById('quizForm');
+function updateTimer() {
+    const min = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const sec = String(totalSeconds % 60).padStart(2, '0');
+    timerEl.textContent = `${min}:${sec}`;
+    if (totalSeconds <= 0) {
+        clearInterval(timerInterval);
+        form.submit();
+    }
+    totalSeconds--;
+}
+updateTimer();
+const timerInterval = setInterval(updateTimer, 1000);
+form.addEventListener('submit', function() {
+    clearInterval(timerInterval);
+});
+window.onbeforeunload = function() {
+    return 'Are you sure you want to leave? Your quiz progress will be lost.';
+};
+</script>
+{% endif %}
+{% endblock %} 

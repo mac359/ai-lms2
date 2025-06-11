@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold"><i class="fas fa-gauge"></i> Student Dashboard</h2>
+        </div>
+    </div>
+    <div class="row g-4 mb-4">
+        <!-- Real-time AI/Behavior Stats -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-gradient-primary text-white">
+                    <i class="fas fa-brain me-2"></i> Real-time Focus & Frustration
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <div class="text-center">
+                                <span class="h4">Focus</span>
+                                <div class="progress mb-1" style="height: 10px;">
+                                    <div id="focus-bar" class="progress-bar bg-success" style="width: 50%"></div>
+                                </div>
+                                <span id="focus-value" class="fw-bold">--%</span>
+                            </div>
+                        </div>
+                        <div class="me-3">
+                            <div class="text-center">
+                                <span class="h4">Frustration</span>
+                                <div class="progress mb-1" style="height: 10px;">
+                                    <div id="frustration-bar" class="progress-bar bg-danger" style="width: 30%"></div>
+                                </div>
+                                <span id="frustration-value" class="fw-bold">--%</span>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 text-end">
+                            <span id="focus-trend" class="badge bg-secondary">Stable</span>
+                        </div>
+                    </div>
+                    <div class="text-muted small mb-2">Live AI analysis of your learning state</div>
+                    <button class="btn btn-outline-primary btn-sm" id="refresh-ai-btn"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+            </div>
+        </div>
+        <!-- Upcoming Events -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-calendar-alt me-2"></i> Upcoming Events
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for event in upcoming_events %}
+                        <li class="list-group-item d-flex align-items-center">
+                            <span class="badge bg-{{ event.color }} me-2">{{ event.type|title }}</span>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">{{ event.title }}</div>
+                                {% if event.course_name %}<small class="text-muted">{{ event.course_name }}</small><br>{% endif %}
+                                <small class="text-muted">{{ event.date.strftime('%b %d, %Y %I:%M %p') }}</small>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-center text-muted">
+                            <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                            <p>No upcoming events</p>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- Motivational/AI Suggestions -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-lightbulb me-2"></i> AI Suggestions
+                </div>
+                <div class="card-body">
+                    <div id="ai-suggestion" class="mb-2">"Stay positive and keep learning!"</div>
+                    <button class="btn btn-outline-success btn-sm" id="refresh-suggestion-btn"><i class="fas fa-sync"></i> New Suggestion</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h5 class="mb-3">Enrolled Courses</h5>
+            <div class="row g-3">
+                {% for course in enrolled_courses %}
+                <div class="col-md-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h6 class="card-title fw-bold">{{ course.title }}</h6>
+                            <div class="mb-2 text-muted">Instructor: {{ course.instructor.email if course.instructor else 'N/A' }}</div>
+                            <div class="mb-2">Progress: <span class="fw-bold">--%</span></div>
+                            <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">View Course</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <h5 class="mb-3">Recent Announcements</h5>
+            <ul class="list-group">
+                {% for ann in announcements %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><b>{{ ann.course }}</b>: {{ ann.title }}</span>
+                    <span class="badge bg-primary rounded-pill">{{ ann.date }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h5 class="mb-3">Assignments</h5>
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Course</th>
+                        <th>Title</th>
+                        <th>Due</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in assignments %}
+                    <tr>
+                        <td>{{ a.course }}</td>
+                        <td>{{ a.title }}</td>
+                        <td>{{ a.due }}</td>
+                        <td><span class="badge {% if a.status == 'Submitted' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ a.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <h5 class="mb-3">Grades & Feedback</h5>
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Course</th>
+                        <th>Grade</th>
+                        <th>Feedback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in grades %}
+                    <tr>
+                        <td>{{ g.course }}</td>
+                        <td>{{ g.grade }}</td>
+                        <td>{{ g.feedback }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+// Real-time AI/behavior stats (simulate for now, replace with AJAX to /student/get_live_behavior_data)
+function updateAIStats() {
+    fetch('/student/get_live_behavior_data')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('focus-bar').style.width = data.latest_focus + '%';
+            document.getElementById('focus-value').textContent = data.latest_focus + '%';
+            document.getElementById('frustration-bar').style.width = data.latest_frustration + '%';
+            document.getElementById('frustration-value').textContent = data.latest_frustration + '%';
+            document.getElementById('focus-trend').textContent = data.trend.charAt(0).toUpperCase() + data.trend.slice(1);
+            document.getElementById('focus-trend').className = 'badge ' + (data.trend === 'improving' ? 'bg-success' : (data.trend === 'declining' ? 'bg-danger' : 'bg-secondary'));
+        });
+}
+setInterval(updateAIStats, 5000);
+document.getElementById('refresh-ai-btn').onclick = updateAIStats;
+updateAIStats();
+
+// Motivational/AI suggestion (simulate for now)
+const suggestions = [
+    "Stay positive and keep learning!",
+    "Every day is a new opportunity to grow.",
+    "Believe in yourself and all that you are.",
+    "Success is the sum of small efforts repeated.",
+    "Your only limit is your mind.",
+    "Keep pushing forward, even when it's tough!"
+];
+function updateSuggestion() {
+    const idx = Math.floor(Math.random() * suggestions.length);
+    document.getElementById('ai-suggestion').textContent = suggestions[idx];
+}
+document.getElementById('refresh-suggestion-btn').onclick = updateSuggestion;
+</script>
+{% endblock %} 

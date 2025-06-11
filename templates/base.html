@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LMS{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/course-detail.css') }}">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar {
+            background: #181c3a;
+            min-height: 100vh;
+            width: 90px;
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 1.5rem;
+        }
+        .sidebar .nav-link {
+            color: #fff;
+            margin: 1.2rem 0;
+            font-size: 1.6rem;
+            text-align: center;
+        }
+        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+            color: #00e6e6;
+        }
+        .right-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 220px;
+            min-height: 100vh;
+            background: #181c3a;
+            color: #fff;
+            padding: 2rem 1rem 1rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 1000;
+        }
+        .right-panel .panel-box {
+            background: #181c3a;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 1.2rem 1rem;
+            margin-bottom: 1.2rem;
+            text-align: center;
+        }
+        .main-content {
+            margin-left: 90px;
+            margin-right: 220px;
+            padding: 2.5rem 2rem 2rem 2rem;
+            min-height: 100vh;
+        }
+        .logo {
+            width: 60px;
+            margin-bottom: 2rem;
+        }
+        @media (max-width: 900px) {
+            .sidebar, .right-panel { display: none; }
+            .main-content { margin: 0; padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    {% block sidebar %}
+    <div class="sidebar">
+        <img src="/static/logo.png" class="logo" alt="Logo">
+        <a class="nav-link" href="/account" title="Account"><i class="fa-regular fa-user"></i></a>
+        <a class="nav-link" href="{% if current_user.is_authenticated and current_user.role == 'student' %}/student/dashboard{% elif current_user.is_authenticated and current_user.role == 'instructor' %}/instructor/dashboard{% elif current_user.is_authenticated and current_user.role == 'admin' %}/admin/dashboard{% else %}/dashboard{% endif %}" title="Dashboard"><i class="fa-solid fa-gauge"></i></a>
+        <a class="nav-link" href="/courses" title="Courses"><i class="fa-solid fa-book"></i></a>
+        <a class="nav-link" href="/calendar" title="Calendar"><i class="fa-regular fa-calendar"></i></a>
+        <a class="nav-link" href="/history" title="History"><i class="fa-regular fa-clock"></i></a>
+        <a class="nav-link" href="/help" title="Help"><i class="fa-regular fa-circle-question"></i></a>
+        {% if current_user.is_authenticated and current_user.role == 'student' %}
+        <a class="nav-link" href="{{ url_for('student.suggest_tutor') }}" title="Suggest Me a Tutor"><i class="fa-solid fa-user-graduate"></i></a>
+        <a class="nav-link" href="{{ url_for('student.behavior_tracking') }}" title="Student Behavior Tracking"><i class="fa-solid fa-brain"></i></a>
+        {% endif %}
+    </div>
+    {% endblock %}
+    {% block rightpanel %}
+    {% if current_user.is_authenticated and current_user.role != 'instructor' %}
+    <div class="right-panel">
+        <div class="panel-box" id="effective-state-box">
+            <div><strong>Effective State</strong></div>
+            <div id="effective-emoji" style="font-size:2rem;">😊</div>
+            <div id="effective-state-text">Positive</div>
+            <div id="motivation-quote" class="mt-2 small" style="color: #fff;">"Joy is a treasure—cherish it, nurture it, and let it light your path always."</div>
+        </div>
+        {% if current_user.role == 'student' %}
+        <div class="panel-box" id="monitoring-status-box">
+            <div><strong>Behavior Monitoring</strong></div>
+            <div id="monitoring-indicator" style="font-size:1.5rem;">⏸️</div>
+            <div id="monitoring-text">Not Active</div>
+            <div class="mt-2">
+                <button id="start-monitoring-btn" class="btn btn-success btn-sm" onclick="startGlobalMonitoring()">
+                    <i class="fas fa-play"></i> Start
+                </button>
+                <button id="stop-monitoring-btn" class="btn btn-danger btn-sm" onclick="stopGlobalMonitoring()" style="display: none;">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+            </div>
+            <div class="mt-2">
+                <small>Focus: <span id="global-focus-level">N/A</span>%</small><br>
+                <small>Frustration: <span id="global-frustration-level">N/A</span>%</small>
+            </div>
+        </div>
+        {% endif %}
+        <div class="panel-box">
+            <div><strong>Suggest me a Tutor</strong></div>
+            <button class="btn btn-outline-light btn-sm mt-2">Click</button>
+        </div>
+        <div class="panel-box">
+            <div><strong>Need a Break</strong></div>
+            <button class="btn btn-outline-light btn-sm mt-2"><i class="fa-solid fa-play"></i> Pause</button>
+        </div>
+    </div>
+    {% endif %}
+    {% endblock %}
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} mt-3">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container-fluid">
+            <a class="navbar-brand" href="/">LMS</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+              <ul class="navbar-nav ms-auto">
+                {% if show_logout %}
+                <li class="nav-item">
+                  <a class="nav-link btn btn-outline-danger ms-2" href="{{ url_for('auth.logout') }}">Logout</a>
+                </li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
+        </nav>
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+    function suggestTutor() {
+        fetch('/student/suggest_tutor', {method: 'POST', headers: {'X-CSRFToken': document.getElementById('csrf_token').value}})
+            .then(response => response.json())
+            .then(data => {
+                let modal = new bootstrap.Modal(document.getElementById('tutorSuggestionModal'));
+                document.getElementById('tutorSuggestionBody').innerText = data.suggestion || data.error;
+                modal.show();
+            });
+    }
+    </script>
+
+    <!-- Modal for Tutor Suggestion -->
+    <div class="modal fade" id="tutorSuggestionModal" tabindex="-1" aria-labelledby="tutorSuggestionModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="tutorSuggestionModalLabel">AI Tutor Suggestion</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="tutorSuggestionBody">
+            Loading suggestion...
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update the Suggest me a Tutor button to call suggestTutor() -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let btn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('Suggest me a Tutor'));
+        if (btn) {
+            btn.setAttribute('onclick', 'suggestTutor()');
+        }
+    });
+    </script>
+
+    <!-- Global Behavior Monitoring Scripts -->
+    {% if current_user.is_authenticated and current_user.role == 'student' %}
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+    // Global monitoring variables
+    let globalSocket = null;
+    let globalMonitoringActive = false;
+    let globalPollingInterval = null;
+    let globalActivityData = { keypresses: 0, mousemoves: 0, mouseclicks: 0 };
+    let globalVideoStream = null;
+    let globalMediaRecorder = null;
+
+    // Initialize global monitoring on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeGlobalMonitoring();
+    });
+
+    function initializeGlobalMonitoring() {
+        // Check if monitoring is already active
+        checkGlobalMonitoringStatus();
+        
+        // Set up activity tracking
+        document.addEventListener('keydown', () => { globalActivityData.keypresses++; });
+        document.addEventListener('mousemove', () => { globalActivityData.mousemoves++; });
+        document.addEventListener('mousedown', () => { globalActivityData.mouseclicks++; });
+        
+        // Send activity data every 5 seconds
+        setInterval(() => {
+            if (globalSocket && globalSocket.connected && globalMonitoringActive) {
+                globalSocket.emit('activity_data', { ...globalActivityData });
+                globalActivityData = { keypresses: 0, mousemoves: 0, mouseclicks: 0 };
+            }
+        }, 5000);
+    }
+
+    function checkGlobalMonitoringStatus() {
+        fetch('/student/monitoring_status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.is_monitoring) {
+                    setGlobalMonitoringUI(true);
+                    startGlobalPolling();
+                    connectGlobalWebSocket();
+                } else {
+                    setGlobalMonitoringUI(false);
+                    stopGlobalPolling();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking monitoring status:', error);
+            });
+    }
+
+    function setGlobalMonitoringUI(isActive) {
+        const indicator = document.getElementById('monitoring-indicator');
+        const text = document.getElementById('monitoring-text');
+        const startBtn = document.getElementById('start-monitoring-btn');
+        const stopBtn = document.getElementById('stop-monitoring-btn');
+        
+        if (isActive) {
+            indicator.textContent = '🔴';
+            text.textContent = 'Active';
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            globalMonitoringActive = true;
+        } else {
+            indicator.textContent = '⏸️';
+            text.textContent = 'Not Active';
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            globalMonitoringActive = false;
+        }
+    }
+
+    function startGlobalPolling() {
+        if (globalPollingInterval) return;
+        globalPollingInterval = setInterval(updateGlobalStatus, 30000); // Poll every 30 seconds
+        updateGlobalStatus(); // Initial fetch
+    }
+
+    function stopGlobalPolling() {
+        if (globalPollingInterval) {
+            clearInterval(globalPollingInterval);
+            globalPollingInterval = null;
+        }
+    }
+
+    function updateGlobalStatus() {
+        fetch('/student/monitoring_status')
+            .then(response => response.json())
+            .then(data => {
+                const focusLevel = document.getElementById('global-focus-level');
+                const frustrationLevel = document.getElementById('global-frustration-level');
+                
+                if (data.avg_focus !== null && data.avg_focus !== undefined) {
+                    focusLevel.textContent = formatFocusLevel(data.avg_focus);
+                } else {
+                    focusLevel.textContent = 'N/A';
+                }
+                
+                if (data.avg_frustration !== null && data.avg_frustration !== undefined) {
+                    frustrationLevel.textContent = formatFrustrationLevel(data.avg_frustration);
+                } else {
+                    frustrationLevel.textContent = 'N/A';
+                }
+            })
+            .catch(error => {
+                console.error('Error updating global status:', error);
+            });
+    }
+
+    function connectGlobalWebSocket() {
+        if (globalSocket && globalSocket.connected) return;
+        
+        globalSocket = io();
+        
+        globalSocket.on('connect', function() {
+            console.log('Global WebSocket connected');
+            if (globalMonitoringActive) {
+                startGlobalMediaStreaming();
+            }
+        });
+        
+        globalSocket.on('disconnect', function() {
+            console.log('Global WebSocket disconnected');
+        });
+    }
+
+    function startGlobalMediaStreaming() {
+        if (!globalSocket || !globalSocket.connected) return;
+        
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(function(stream) {
+                globalVideoStream = stream;
+                
+                // Start sending video frames
+                const canvas = document.createElement('canvas');
+                canvas.width = 320;
+                canvas.height = 240;
+                const ctx = canvas.getContext('2d');
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                function captureFrame() {
+                    if (globalMonitoringActive && globalSocket && globalSocket.connected) {
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const dataURL = canvas.toDataURL('image/jpeg');
+                        globalSocket.emit('media_frame', { video: dataURL });
+                        setTimeout(captureFrame, 2000); // Send every 2 seconds
+                    }
+                }
+                
+                video.onloadedmetadata = function() {
+                    captureFrame();
+                };
+                
+                // Start audio streaming
+                startGlobalAudioStreaming(stream);
+            })
+            .catch(function(err) {
+                console.error('Camera/mic access denied or not available:', err);
+            });
+    }
+
+    function startGlobalAudioStreaming(stream) {
+        if (globalMediaRecorder) globalMediaRecorder.stop();
+        
+        try {
+            globalMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            globalMediaRecorder.ondataavailable = function(e) {
+                if (e.data.size > 0 && globalMonitoringActive && globalSocket && globalSocket.connected) {
+                    let reader = new FileReader();
+                    reader.onloadend = function() {
+                        let base64Audio = reader.result.split(',')[1];
+                        globalSocket.emit('media_frame', { audio: base64Audio });
+                    };
+                    reader.readAsDataURL(e.data);
+                }
+            };
+            globalMediaRecorder.start(2000); // Send audio every 2s
+        } catch (error) {
+            console.error('Audio streaming not supported:', error);
+        }
+    }
+
+    function startGlobalMonitoring() {
+        setGlobalMonitoringUI(true);
+        
+        fetch('/student/start_behavior_monitor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                setGlobalMonitoringUI(false);
+            } else {
+                startGlobalPolling();
+                connectGlobalWebSocket();
+                // Store monitoring state in localStorage
+                localStorage.setItem('behaviorMonitoringActive', 'true');
+            }
+        })
+        .catch(error => {
+            console.error('Error starting monitoring:', error);
+            setGlobalMonitoringUI(false);
+        });
+    }
+
+    function stopGlobalMonitoring() {
+        setGlobalMonitoringUI(false);
+        stopGlobalPolling();
+        
+        // Stop media streams
+        if (globalVideoStream) {
+            globalVideoStream.getTracks().forEach(track => track.stop());
+            globalVideoStream = null;
+        }
+        if (globalMediaRecorder) {
+            globalMediaRecorder.stop();
+            globalMediaRecorder = null;
+        }
+        
+        // Disconnect WebSocket
+        if (globalSocket) {
+            globalSocket.disconnect();
+            globalSocket = null;
+        }
+        
+        fetch('/student/stop_behavior_monitor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remove monitoring state from localStorage
+            localStorage.removeItem('behaviorMonitoringActive');
+        })
+        .catch(error => {
+            console.error('Error stopping monitoring:', error);
+        });
+    }
+
+    // Check localStorage on page load to restore monitoring state
+    window.addEventListener('load', function() {
+        if (localStorage.getItem('behaviorMonitoringActive') === 'true') {
+            // If monitoring was active, check server status
+            setTimeout(() => {
+                checkGlobalMonitoringStatus();
+            }, 1000);
+        }
+    });
+
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Page is hidden, pause monitoring
+            if (globalMonitoringActive) {
+                console.log('Page hidden, pausing monitoring');
+            }
+        } else {
+            // Page is visible, resume monitoring
+            if (globalMonitoringActive) {
+                console.log('Page visible, resuming monitoring');
+                checkGlobalMonitoringStatus();
+            }
+        }
+    });
+
+    // Utility functions for consistent data formatting
+    function formatFocusLevel(score) {
+        if (score === null || score === undefined) {
+            return 'N/A';
+        }
+        return Math.round(score * 100) + '%';
+    }
+    
+    function formatFrustrationLevel(score) {
+        if (score === null || score === undefined) {
+            return 'N/A';
+        }
+        return Math.round(score * 100) + '%';
+    }
+    
+    function getFocusBadgeClass(score) {
+        if (score === null || score === undefined) {
+            return 'bg-secondary';
+        }
+        const percent = score * 100;
+        if (percent >= 70) return 'bg-success';
+        if (percent >= 40) return 'bg-warning';
+        return 'bg-danger';
+    }
+    
+    function getFrustrationBadgeClass(score) {
+        if (score === null || score === undefined) {
+            return 'bg-secondary';
+        }
+        const percent = score * 100;
+        if (percent >= 70) return 'bg-danger';
+        if (percent >= 40) return 'bg-warning';
+        return 'bg-success';
+    }
+    
+    function getFocusStatusText(score) {
+        if (score === null || score === undefined) {
+            return 'Unknown';
+        }
+        const percent = score * 100;
+        if (percent >= 70) return 'Focused';
+        if (percent >= 40) return 'Partially Focused';
+        return 'Not Focused';
+    }
+    </script>
+    {% endif %}
+    <script>
+    // Dynamic Effective State (emoji, text, quote) based on frustration level
+    const quotes = [
+        { level: 'positive', text: '"Joy is a treasure—cherish it, nurture it, and let it light your path always."' },
+        { level: 'neutral', text: '"Keep going, every step counts!"' },
+        { level: 'frustrated', text: '"Take a deep breath. Every challenge is a chance to grow."' },
+        { level: 'very_frustrated', text: '"It\'s okay to pause. You are stronger than you think!"' }
+    ];
+    function updateEffectiveState() {
+        const emojiEl = document.getElementById('effective-emoji');
+        const stateEl = document.getElementById('effective-state-text');
+        const quoteEl = document.getElementById('motivation-quote');
+        if (!emojiEl || !stateEl || !quoteEl) return;
+        fetch('/student/get_live_behavior_data')
+            .then(response => response.json())
+            .then(data => {
+                let emoji = '😊';
+                let state = 'Positive';
+                let quote = quotes[0].text;
+                const frustration = data.latest_frustration;
+                if (frustration < 30) {
+                    emoji = '😊';
+                    state = 'Positive';
+                    quote = quotes[0].text;
+                } else if (frustration < 60) {
+                    emoji = '😐';
+                    state = 'Neutral';
+                    quote = quotes[1].text;
+                } else if (frustration < 80) {
+                    emoji = '😟';
+                    state = 'Frustrated';
+                    quote = quotes[2].text;
+                } else {
+                    emoji = '😣';
+                    state = 'Very Frustrated';
+                    quote = quotes[3].text;
+                }
+                emojiEl.textContent = emoji;
+                stateEl.textContent = state;
+                quoteEl.textContent = quote;
+            });
+    }
+    if (document.getElementById('motivation-quote')) {
+        setInterval(updateEffectiveState, 5000);
+        updateEffectiveState();
+    }
+
+    // Live Behavior Monitoring Data (for every page)
+    function updateBehaviorPanel() {
+        const focusEl = document.getElementById('global-focus-level');
+        const frustrationEl = document.getElementById('global-frustration-level');
+        if (!focusEl || !frustrationEl) return;
+        fetch('/student/get_live_behavior_data')
+            .then(response => response.json())
+            .then(data => {
+                focusEl.textContent = data.latest_focus !== undefined ? data.latest_focus : 'N/A';
+                frustrationEl.textContent = data.latest_frustration !== undefined ? data.latest_frustration : 'N/A';
+            });
+    }
+    if (document.getElementById('global-focus-level')) {
+        setInterval(updateBehaviorPanel, 5000);
+        updateBehaviorPanel();
+    }
+    </script>
+    <script>
+    // Universal Focus/Frustration Live Update (all pages)
+    function updateAllFocusFrustrationDisplays() {
+        fetch('/student/get_live_behavior_data')
+            .then(response => response.json())
+            .then(data => {
+                // Focus
+                const focus = data.latest_focus !== undefined ? data.latest_focus : 'N/A';
+                const focusPercent = (typeof focus === 'number') ? Math.round(focus) : focus;
+                // Frustration
+                const frustration = data.latest_frustration !== undefined ? data.latest_frustration : 'N/A';
+                const frustrationPercent = (typeof frustration === 'number') ? Math.round(frustration) : frustration;
+
+                // Update all possible elements if present
+                if (document.getElementById('focus-badge')) {
+                    document.getElementById('focus-badge').textContent = `Focus: ${focusPercent}%`;
+                }
+                if (document.getElementById('frustration-badge')) {
+                    document.getElementById('frustration-badge').textContent = `Frustration: ${frustrationPercent}%`;
+                }
+                if (document.getElementById('live-focus')) {
+                    document.getElementById('live-focus').textContent = `${focusPercent}%`;
+                }
+                if (document.getElementById('live-frustration')) {
+                    document.getElementById('live-frustration').textContent = `${frustrationPercent}%`;
+                }
+                if (document.getElementById('focus-level')) {
+                    document.getElementById('focus-level').textContent = focusPercent;
+                }
+                if (document.getElementById('frustration-level')) {
+                    document.getElementById('frustration-level').textContent = frustrationPercent;
+                }
+            });
+    }
+    // Only run if any of the target elements exist
+    if (
+        document.getElementById('focus-badge') ||
+        document.getElementById('frustration-badge') ||
+        document.getElementById('live-focus') ||
+        document.getElementById('live-frustration') ||
+        document.getElementById('focus-level') ||
+        document.getElementById('frustration-level')
+    ) {
+        setInterval(updateAllFocusFrustrationDisplays, 5000);
+        updateAllFocusFrustrationDisplays();
+    }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/course-detail.js') }}"></script>
+</body>
+</html> 

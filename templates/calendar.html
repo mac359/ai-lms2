@@ -1,0 +1,583 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h2 class="fw-bold"><i class="fas fa-calendar-alt"></i> Calendar</h2>
+            {% if current_user.is_authenticated and current_user.role == 'instructor' %}
+            <div>
+                <a href="{{ url_for('instructor.create_event') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus"></i> Add Event
+                </a>
+                <button class="btn btn-outline-secondary" onclick="toggleView()">
+                    <i class="fas fa-list"></i> <span id="viewToggle">List View</span>
+                </button>
+            </div>
+            {% else %}
+            <span class="text-muted">Only instructors can add events</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Calendar View -->
+    <div class="row" id="calendarView">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar"></i> 
+                            <span id="currentMonth">June 2024</span>
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-light me-2" onclick="previousMonth()">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" onclick="nextMonth()">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0" id="calendarTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center">Sun</th>
+                                    <th class="text-center">Mon</th>
+                                    <th class="text-center">Tue</th>
+                                    <th class="text-center">Wed</th>
+                                    <th class="text-center">Thu</th>
+                                    <th class="text-center">Fri</th>
+                                    <th class="text-center">Sat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendarBody">
+                                <!-- Calendar will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Upcoming Events</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="upcomingEvents">
+                        {% for item in calendar_items[:10] %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ item.title }}</h6>
+                                    {% if item.course_name %}
+                                    <small class="text-muted">{{ item.course_name }}</small><br>
+                                    {% endif %}
+                                    <small class="text-muted">{{ item.date.strftime('%b %d, %Y at %I:%M %p') }}</small>
+                                </div>
+                                <span class="badge bg-{{ item.color }} ms-2">{{ item.type|title }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                            <p>No upcoming events</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- List View -->
+    <div class="row" id="listView" style="display: none;">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> All Events</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <select class="form-select" id="filterType">
+                                <option value="">All Types</option>
+                                <option value="event">Events</option>
+                                <option value="meeting">Meetings</option>
+                                <option value="assignment">Assignments</option>
+                                <option value="quiz">Quizzes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filterCourse">
+                                <option value="">All Courses</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="filterDate" placeholder="Filter by date">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times"></i> Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Course</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventsTableBody">
+                                {% for item in calendar_items %}
+                                <tr class="event-row" data-type="{{ item.type }}" data-course="{{ item.course_name }}" data-date="{{ item.date.strftime('%Y-%m-%d') }}">
+                                    <td>
+                                        <strong>{{ item.date.strftime('%b %d, %Y') }}</strong><br>
+                                        <small class="text-muted">{{ item.date.strftime('%I:%M %p') }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ item.color }} me-2">{{ item.type|title }}</span>
+                                        {{ item.title }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ item.color }}">{{ item.type|title }}</span>
+                                    </td>
+                                    <td>
+                                        {% if item.course_name %}
+                                        <span class="text-primary">{{ item.course_name }}</span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.description %}
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ item.description }}">
+                                            {{ item.description[:50] }}{% if item.description|length > 50 %}...{% endif %}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">No description</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewEventDetails({{ item.id }}, '{{ item.type }}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if current_user.role == 'instructor' %}
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent({{ item.id }}, '{{ item.type }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalTitle">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody">
+                <!-- Event details will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.calendar-day {
+    height: 100px;
+    vertical-align: top;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+}
+
+.calendar-day.today {
+    background-color: #e3f2fd;
+}
+
+.calendar-day.other-month {
+    background-color: #f5f5f5;
+    color: #999;
+}
+
+.event-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 2px;
+}
+
+.event-item {
+    font-size: 0.8rem;
+    margin: 1px 0;
+    padding: 1px 3px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.event-item:hover {
+    opacity: 0.8;
+}
+
+.day-number {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.event-count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+
+<script>
+// Calendar data will be passed from the server
+let currentDate = new Date();
+let calendarData = [];
+
+// Initialize calendar
+document.addEventListener('DOMContentLoaded', function() {
+    // Get calendar data from the data attribute
+    const calendarDataElement = document.getElementById('calendarData');
+    if (calendarDataElement) {
+        calendarData = JSON.parse(calendarDataElement.textContent);
+    }
+    
+    renderCalendar();
+    setupFilters();
+});
+
+function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Update month display
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const calendarBody = document.getElementById('calendarBody');
+    calendarBody.innerHTML = '';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    for (let week = 0; week < 6; week++) {
+        const row = document.createElement('tr');
+        
+        for (let day = 0; day < 7; day++) {
+            const cell = document.createElement('td');
+            cell.className = 'calendar-day';
+            
+            const currentDay = new Date(startDate);
+            currentDay.setDate(startDate.getDate() + (week * 7) + day);
+            
+            // Check if this day is in current month
+            if (currentDay.getMonth() !== month) {
+                cell.classList.add('other-month');
+            }
+            
+            // Check if this is today
+            if (currentDay.getTime() === today.getTime()) {
+                cell.classList.add('today');
+            }
+            
+            // Day number
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'day-number';
+            dayNumber.textContent = currentDay.getDate();
+            cell.appendChild(dayNumber);
+            
+            // Events for this day
+            const dayEvents = getEventsForDate(currentDay);
+            if (dayEvents.length > 0) {
+                const eventCount = document.createElement('div');
+                eventCount.className = 'event-count';
+                eventCount.textContent = dayEvents.length;
+                cell.appendChild(eventCount);
+                
+                dayEvents.slice(0, 3).forEach(event => {
+                    const eventItem = document.createElement('div');
+                    eventItem.className = `event-item bg-${event.color}`;
+                    eventItem.textContent = event.title;
+                    eventItem.onclick = () => viewEventDetails(event.id, event.type);
+                    cell.appendChild(eventItem);
+                });
+                
+                if (dayEvents.length > 3) {
+                    const moreItem = document.createElement('div');
+                    moreItem.className = 'event-item bg-secondary';
+                    moreItem.textContent = `+${dayEvents.length - 3} more`;
+                    cell.appendChild(moreItem);
+                }
+            }
+            
+            row.appendChild(cell);
+        }
+        
+        calendarBody.appendChild(row);
+    }
+}
+
+function getEventsForDate(date) {
+    const dateStr = date.toISOString().split('T')[0];
+    return calendarData.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate.toISOString().split('T')[0] === dateStr;
+    });
+}
+
+function previousMonth() {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+}
+
+function nextMonth() {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+}
+
+function toggleView() {
+    const calendarView = document.getElementById('calendarView');
+    const listView = document.getElementById('listView');
+    const viewToggle = document.getElementById('viewToggle');
+    
+    if (calendarView.style.display === 'none') {
+        calendarView.style.display = 'flex';
+        listView.style.display = 'none';
+        viewToggle.innerHTML = '<i class="fas fa-list"></i> List View';
+    } else {
+        calendarView.style.display = 'none';
+        listView.style.display = 'flex';
+        viewToggle.innerHTML = '<i class="fas fa-calendar"></i> Calendar View';
+    }
+}
+
+function setupFilters() {
+    document.getElementById('filterType').addEventListener('change', filterEvents);
+    document.getElementById('filterCourse').addEventListener('change', filterEvents);
+    document.getElementById('filterDate').addEventListener('change', filterEvents);
+}
+
+function filterEvents() {
+    const typeFilter = document.getElementById('filterType').value;
+    const courseFilter = document.getElementById('filterCourse').value;
+    const dateFilter = document.getElementById('filterDate').value;
+    
+    const rows = document.querySelectorAll('.event-row');
+    
+    rows.forEach(row => {
+        let show = true;
+        
+        if (typeFilter && row.dataset.type !== typeFilter) {
+            show = false;
+        }
+        
+        if (courseFilter) {
+            const courseId = row.dataset.course;
+            if (courseId !== courseFilter) {
+                show = false;
+            }
+        }
+        
+        if (dateFilter && row.dataset.date !== dateFilter) {
+            show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('filterType').value = '';
+    document.getElementById('filterCourse').value = '';
+    document.getElementById('filterDate').value = '';
+    filterEvents();
+}
+
+function viewEventDetails(id, type) {
+    // Find the event in calendarData
+    const event = calendarData.find(item => item.id === id && item.type === type);
+    
+    if (!event) return;
+    
+    const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+    const modalTitle = document.getElementById('eventModalTitle');
+    const modalBody = document.getElementById('eventModalBody');
+    
+    modalTitle.textContent = event.title;
+    
+    let details = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Date & Time</h6>
+                <p>${new Date(event.date).toLocaleString()}</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Type</h6>
+                <span class="badge bg-${event.color}">${event.type}</span>
+            </div>
+        </div>
+    `;
+    
+    if (event.course_name) {
+        details += `
+            <div class="row">
+                <div class="col-12">
+                    <h6>Course</h6>
+                    <p>${event.course_name}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (event.description) {
+        details += `
+            <div class="row">
+                <div class="col-12">
+                    <h6>Description</h6>
+                    <p>${event.description}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add type-specific details
+    if (event.type === 'meeting' && event.meeting_link) {
+        details += `
+            <div class="row">
+                <div class="col-12">
+                    <h6>Meeting Link</h6>
+                    <a href="${event.meeting_link}" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-video"></i> Join Meeting
+                    </a>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (event.type === 'assignment' && event.points) {
+        details += `
+            <div class="row">
+                <div class="col-12">
+                    <h6>Points</h6>
+                    <p>${event.points}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (event.type === 'quiz') {
+        details += `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Time Limit</h6>
+                    <p>${event.time_limit || 'No limit'} minutes</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>End Time</h6>
+                    <p>${event.end_time ? new Date(event.end_time).toLocaleString() : 'No end time'}</p>
+                </div>
+            </div>
+        `;
+    }
+    
+    modalBody.innerHTML = details;
+    modal.show();
+}
+
+function deleteEvent(id, type) {
+    if (!confirm('Are you sure you want to delete this event?')) {
+        return;
+    }
+    
+    // Determine the correct delete URL based on type
+    let deleteUrl;
+    switch(type) {
+        case 'event':
+            deleteUrl = `/instructor/events/delete/${id}`;
+            break;
+        case 'meeting':
+            deleteUrl = `/instructor/courses/1/delete_meeting/${id}`; // You'll need to get the correct course_id
+            break;
+        case 'assignment':
+            deleteUrl = `/instructor/courses/1/delete_assignment/${id}`; // You'll need to get the correct course_id
+            break;
+        case 'quiz':
+            deleteUrl = `/instructor/courses/1/delete_quiz/${id}`; // You'll need to get the correct course_id
+            break;
+        default:
+            alert('Cannot delete this type of event');
+            return;
+    }
+    
+    // Create and submit form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = deleteUrl;
+    
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = 'csrf_token';
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    form.appendChild(csrfToken);
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+
+<!-- Hidden element to store calendar data -->
+<script id="calendarData" type="application/json">{{ calendar_items|tojson|safe }}</script>
+{% endblock %} 

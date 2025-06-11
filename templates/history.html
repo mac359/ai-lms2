@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">History</h2>
+        </div>
+    </div>
+    <div class="row mb-4">
+        <div class="col-12">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Activity</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2025-06-08 10:30</td>
+                        <td>Logged in</td>
+                        <td><span class="badge bg-primary">Login</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-06-08 10:45</td>
+                        <td>Submitted Assignment 1</td>
+                        <td><span class="badge bg-success">Submission</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-06-08 11:00</td>
+                        <td>Received Grade: A</td>
+                        <td><span class="badge bg-info text-dark">Grade</span></td>
+                    </tr>
+                    <tr>
+                        <td>2025-06-08 11:15</td>
+                        <td>Posted in Discussion</td>
+                        <td><span class="badge bg-secondary">Discussion</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %} 

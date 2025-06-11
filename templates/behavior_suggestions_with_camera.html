@@ -1,0 +1,593 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>AI Behavior Analysis with Live Camera Feed</h2>
+    
+    <div class="row">
+        <!-- Camera Feed Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-video"></i> Live Camera Feed
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="camera-container" style="position: relative; display: inline-block;">
+                        <video id="camera-feed" width="400" height="300" autoplay playsinline style="border: 2px solid #007bff; border-radius: 8px; background: #000;"></video>
+                        <div id="camera-overlay" style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px;">
+                            <i class="fas fa-circle" style="color: #28a745;"></i> Live
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="alert alert-info data-card focus-card">
+                                    <strong>Focus Level:</strong><br>
+                                    <span class="h4" id="live-focus">{{ live_focus }}%</span>
+                                    <div class="small mt-1">
+                                        <span id="focus-trend" class="badge bg-secondary">Stable</span>
+                                        <span id="focus-avg" class="text-muted">Avg: --</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="alert alert-warning data-card frustration-card">
+                                    <strong>Frustration Level:</strong><br>
+                                    <span class="h4" id="live-frustration">{{ live_frustration }}%</span>
+                                    <div class="small mt-1">
+                                        <span id="frustration-trend" class="badge bg-secondary">Stable</span>
+                                        <span id="frustration-avg" class="text-muted">Avg: --</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Real-time Status -->
+                        <div class="alert alert-light border">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <small class="text-muted">Last Updated</small><br>
+                                    <span id="last-updated" class="fw-bold">--</span>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Data Points</small><br>
+                                    <span id="data-points" class="fw-bold">--</span>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted">Status</small><br>
+                                    <span id="monitoring-status" class="badge bg-success status-live">Live</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button id="toggle-camera" class="btn btn-outline-primary" onclick="toggleCamera()">
+                            <i class="fas fa-eye"></i> Show/Hide Camera
+                        </button>
+                        <button id="capture-photo" class="btn btn-outline-success ms-2" onclick="capturePhoto()">
+                            <i class="fas fa-camera"></i> Capture Photo
+                        </button>
+                        <button id="refresh-data" class="btn btn-outline-info ms-2" onclick="updateLiveData()">
+                            <i class="fas fa-sync"></i> Refresh Data
+                        </button>
+                    </div>
+                    
+                    <div id="captured-photos" class="mt-3" style="display: none;">
+                        <h6>Captured Photos:</h6>
+                        <div id="photo-gallery" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Suggestions Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-brain"></i> AI Analysis Results
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if ai_suggestions %}
+                        {% if ai_suggestions.focus_analysis %}
+                        <div class="alert {% if ai_suggestions.focus_analysis.is_focused %}alert-success{% else %}alert-warning{% endif %}">
+                            <h6><i class="fas fa-chart-line"></i> Focus Analysis</h6>
+                            <p class="mb-0">{{ ai_suggestions.focus_analysis.message }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if ai_suggestions.recommendations %}
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-lightbulb"></i> General Recommendations</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    {% for rec in ai_suggestions.recommendations %}
+                                    <li class="list-group-item">
+                                        <strong>{{ rec.title }}</strong>
+                                        <p class="mb-0">{{ rec.description }}</p>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if ai_suggestions.course_suggestions %}
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-graduation-cap"></i> Course & Learning Environment Suggestions</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    {% for suggestion in ai_suggestions.course_suggestions %}
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ suggestion.title }}</strong>
+                                                <span class="badge {% if suggestion.type == 'course_change' %}bg-primary{% elif suggestion.type == 'instructor_change' %}bg-warning{% else %}bg-info{% endif %} ms-2">
+                                                    {{ suggestion.type.replace('_', ' ').title() }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p class="mb-0 mt-2">{{ suggestion.description }}</p>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No AI suggestions available. Please try again.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('student.behavior_tracking') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i> Back to Behavior Tracking
+                        </a>
+                        <button class="btn btn-success ms-2" onclick="window.location.reload()">
+                            <i class="fas fa-sync"></i> Refresh Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Emotion Log History -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Emotion Log History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Focus Score</th>
+                                    <th>Frustration Score</th>
+                                    <th>Source Data Summary</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for log in logs[:10] %}
+                                <tr>
+                                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>
+                                        <span class="badge {% if log.focus_score >= 0.7 %}bg-success{% elif log.focus_score >= 0.4 %}bg-warning{% else %}bg-danger{% endif %}">
+                                            {{ "%.1f"|format(log.focus_score * 100) }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if log.frustration_score >= 0.7 %}bg-danger{% elif log.frustration_score >= 0.4 %}bg-warning{% else %}bg-success{% endif %}">
+                                            {{ "%.1f"|format(log.frustration_score * 100) }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small><pre style="white-space: pre-wrap; max-height: 100px; overflow-y: auto;">{{ log.source_data_summary }}</pre></small>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let cameraStream = null;
+let cameraActive = true;
+let capturedPhotos = [];
+let liveDataInterval = null;
+
+// Initialize camera on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCamera();
+    startLiveDataUpdates();
+});
+
+function initializeCamera() {
+    navigator.mediaDevices.getUserMedia({ 
+        video: { 
+            width: { ideal: 400 },
+            height: { ideal: 300 },
+            facingMode: 'user'
+        }, 
+        audio: false 
+    })
+    .then(function(stream) {
+        cameraStream = stream;
+        const video = document.getElementById('camera-feed');
+        video.srcObject = stream;
+        video.play();
+        
+        // Update overlay
+        document.getElementById('camera-overlay').innerHTML = '<i class="fas fa-circle" style="color: #28a745;"></i> Live';
+    })
+    .catch(function(err) {
+        console.error('Camera access denied or not available:', err);
+        document.getElementById('camera-feed').style.display = 'none';
+        document.getElementById('camera-overlay').innerHTML = '<i class="fas fa-circle" style="color: #dc3545;"></i> Camera Unavailable';
+        document.getElementById('toggle-camera').disabled = true;
+        document.getElementById('capture-photo').disabled = true;
+    });
+}
+
+function toggleCamera() {
+    const video = document.getElementById('camera-feed');
+    const overlay = document.getElementById('camera-overlay');
+    
+    if (cameraActive) {
+        video.style.display = 'none';
+        overlay.innerHTML = '<i class="fas fa-circle" style="color: #dc3545;"></i> Hidden';
+        cameraActive = false;
+    } else {
+        video.style.display = 'block';
+        overlay.innerHTML = '<i class="fas fa-circle" style="color: #28a745;"></i> Live';
+        cameraActive = true;
+    }
+}
+
+function capturePhoto() {
+    if (!cameraStream) return;
+    
+    const video = document.getElementById('camera-feed');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to data URL
+    const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Add to captured photos array
+    capturedPhotos.push({
+        data: dataURL,
+        timestamp: new Date().toLocaleString()
+    });
+    
+    // Update photo gallery
+    updatePhotoGallery();
+    
+    // Show success message
+    showNotification('Photo captured successfully!', 'success');
+}
+
+function updatePhotoGallery() {
+    const gallery = document.getElementById('photo-gallery');
+    const container = document.getElementById('captured-photos');
+    
+    if (capturedPhotos.length > 0) {
+        container.style.display = 'block';
+        gallery.innerHTML = '';
+        
+        capturedPhotos.forEach((photo, index) => {
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'position-relative';
+            photoDiv.innerHTML = `
+                <img src="${photo.data}" alt="Captured photo ${index + 1}" 
+                     style="width: 80px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                     onclick="viewPhoto('${photo.data}', '${photo.timestamp}')">
+                <button class="btn btn-sm btn-danger position-absolute top-0 end-0" 
+                        style="font-size: 8px; padding: 2px 4px;"
+                        onclick="deletePhoto(${index})">
+                    ×
+                </button>
+            `;
+            gallery.appendChild(photoDiv);
+        });
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function viewPhoto(dataURL, timestamp) {
+    // Create modal to view photo
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Captured Photo - ${timestamp}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="${dataURL}" alt="Full size photo" style="max-width: 100%; height: auto;">
+                </div>
+                <div class="modal-footer">
+                    <a href="${dataURL}" download="behavior_photo_${timestamp.replace(/[^a-zA-Z0-9]/g, '_')}.jpg" 
+                       class="btn btn-primary">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
+function deletePhoto(index) {
+    capturedPhotos.splice(index, 1);
+    updatePhotoGallery();
+    showNotification('Photo deleted!', 'info');
+}
+
+function showNotification(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 3000);
+}
+
+// Clean up camera stream on page unload
+window.addEventListener('beforeunload', function() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+    }
+    if (liveDataInterval) {
+        clearInterval(liveDataInterval);
+    }
+});
+
+function startLiveDataUpdates() {
+    // Fetch initial data
+    updateLiveData();
+    
+    // Set up periodic updates every 3 seconds
+    liveDataInterval = setInterval(updateLiveData, 3000);
+}
+
+function updateLiveData() {
+    // Show loading state
+    const refreshBtn = document.getElementById('refresh-data');
+    const originalText = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    refreshBtn.disabled = true;
+    
+    fetch('/student/get_live_behavior_data')
+        .then(response => response.json())
+        .then(data => {
+            // Update focus level using utility function
+            document.getElementById('live-focus').textContent = formatFocusLevel(data.latest_focus / 100);
+            
+            // Update frustration level using utility function
+            document.getElementById('live-frustration').textContent = formatFrustrationLevel(data.latest_frustration / 100);
+            
+            // Update trend indicators
+            updateTrendIndicator('focus-trend', data.trend);
+            updateTrendIndicator('frustration-trend', data.trend);
+            
+            // Update averages using utility functions
+            document.getElementById('focus-avg').textContent = `Avg: ${formatFocusLevel(data.avg_focus / 100)}`;
+            document.getElementById('frustration-avg').textContent = `Avg: ${formatFrustrationLevel(data.avg_frustration / 100)}`;
+            
+            // Update status information
+            if (data.last_updated) {
+                const lastUpdated = new Date(data.last_updated);
+                const now = new Date();
+                const diffMinutes = Math.floor((now - lastUpdated) / (1000 * 60));
+                
+                if (diffMinutes < 1) {
+                    document.getElementById('last-updated').textContent = 'Just now';
+                } else if (diffMinutes < 60) {
+                    document.getElementById('last-updated').textContent = `${diffMinutes}m ago`;
+                } else {
+                    const diffHours = Math.floor(diffMinutes / 60);
+                    document.getElementById('last-updated').textContent = `${diffHours}h ago`;
+                }
+            } else {
+                document.getElementById('last-updated').textContent = 'No data';
+            }
+            
+            // Update data points count
+            document.getElementById('data-points').textContent = data.recent_logs_count;
+            
+            // Update monitoring status
+            const statusElement = document.getElementById('monitoring-status');
+            if (data.recent_logs_count > 0) {
+                statusElement.textContent = 'Live';
+                statusElement.className = 'badge bg-success status-live';
+            } else {
+                statusElement.textContent = 'No Data';
+                statusElement.className = 'badge bg-warning';
+            }
+            
+            // Add visual feedback for updates
+            addUpdateAnimation();
+            
+            // Show success message briefly
+            showNotification('Data updated successfully!', 'success');
+        })
+        .catch(error => {
+            console.error('Error fetching live data:', error);
+            document.getElementById('monitoring-status').textContent = 'Error';
+            document.getElementById('monitoring-status').className = 'badge bg-danger';
+            showNotification('Error updating data. Please try again.', 'danger');
+        })
+        .finally(() => {
+            // Restore button state
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+        });
+}
+
+function updateTrendIndicator(elementId, trend) {
+    const element = document.getElementById(elementId);
+    element.textContent = trend.charAt(0).toUpperCase() + trend.slice(1);
+    
+    // Update badge color based on trend
+    element.className = 'badge ';
+    switch(trend) {
+        case 'improving':
+            element.className += 'bg-success';
+            break;
+        case 'declining':
+            element.className += 'bg-danger';
+            break;
+        default:
+            element.className += 'bg-secondary';
+    }
+}
+
+function addUpdateAnimation() {
+    // Add a subtle animation to show data was updated
+    const elements = ['live-focus', 'live-frustration'];
+    elements.forEach(id => {
+        const element = document.getElementById(id);
+        element.style.transition = 'all 0.3s ease';
+        element.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            element.style.transform = 'scale(1)';
+        }, 300);
+    });
+}
+</script>
+
+<style>
+.camera-container {
+    position: relative;
+    display: inline-block;
+}
+
+#camera-feed {
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    background: #000;
+}
+
+#camera-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.photo-gallery img:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s;
+}
+
+/* Real-time update animations */
+.live-data-update {
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Status indicators */
+.status-live {
+    animation: blink 2s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.7; }
+}
+
+/* Trend indicators */
+.trend-improving {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.trend-declining {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.trend-stable {
+    color: #6c757d;
+    font-weight: bold;
+}
+
+/* Camera overlay improvements */
+#camera-overlay {
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Data cards */
+.data-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.data-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.data-card.focus-card {
+    border-left-color: #17a2b8;
+}
+
+.data-card.frustration-card {
+    border-left-color: #ffc107;
+}
+</style>
+{% endblock %} 

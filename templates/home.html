@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .home-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: stretch;
+        background: #fff;
+        margin: 0;
+        padding: 0;
+    }
+    .home-left {
+        background: #181c3a;
+        color: #fff;
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 320px;
+        background-image: url('/static/auth-bg.svg');
+        background-size: cover;
+        background-position: center;
+        border-top-left-radius: 18px;
+        border-bottom-left-radius: 18px;
+    }
+    .home-logo {
+        width: 120px;
+        margin-bottom: 1.5rem;
+    }
+    .home-title {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+        letter-spacing: 2px;
+        text-align: center;
+    }
+    .home-subtitle {
+        font-size: 1.1rem;
+        color: #b3b3b3;
+        margin-bottom: 2.5rem;
+        text-align: center;
+        max-width: 350px;
+    }
+    .home-right {
+        flex: 1 1 0;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 3rem 2.5rem;
+        min-width: 350px;
+        max-width: 480px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        border-top-right-radius: 18px;
+        border-bottom-right-radius: 18px;
+    }
+    .home-card {
+        width: 100%;
+        max-width: 400px;
+        padding: 2.5rem 2rem;
+        border-radius: 18px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+        background: #fff;
+        text-align: center;
+    }
+    .home-card .btn {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        padding: 0.75rem 0;
+    }
+    .home-card .btn-login {
+        background: #181c3a;
+        color: #fff;
+        border: none;
+    }
+    .home-card .btn-signup {
+        background: #fff;
+        color: #181c3a;
+        border: 2px solid #181c3a;
+    }
+    .home-card .btn-signup:hover {
+        background: #181c3a;
+        color: #fff;
+    }
+    @media (max-width: 900px) {
+        .home-container { flex-direction: column; }
+        .home-left, .home-right {
+            min-width: 100%;
+            border-radius: 0;
+        }
+        .home-right { box-shadow: none; }
+    }
+</style>
+<div class="home-container">
+    <div class="home-left">
+        <img src="/static/logo.png" class="home-logo" alt="Logo">
+        <div class="home-title">Welcome to the AI-Powered LMS</div>
+        <div class="home-subtitle">Empowering learning with emotion-aware, adaptive, and engaging technology. Join as a student or instructor and experience the future of education.</div>
+    </div>
+    <div class="home-right">
+        <div class="home-card">
+            <a href="/login" class="btn btn-login mb-3">Login</a>
+            <a href="/register/student" class="btn btn-signup">Sign Up</a>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+{% block sidebar %}{% endblock %}
+{% block rightpanel %}{% endblock %} 

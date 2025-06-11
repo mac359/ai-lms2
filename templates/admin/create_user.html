@@ -1,0 +1,249 @@
+{% extends 'admin/base.html' %}
+{% block title %}Create User - Admin Panel{% endblock %}
+{% block page_title %}Create New User{% endblock %}
+{% block page_subtitle %}Add a new student or instructor to the system{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user-plus me-2"></i>Create New User
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="createUserForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                                <div class="form-text">This will be used as the login username.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Role *</label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="">Select Role</option>
+                                    <option value="student">Student</option>
+                                    <option value="instructor">Instructor</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">Password *</label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="form-text">Minimum 8 characters recommended.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password *</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                            </div>
+                        </div>
+
+                        <!-- Profile Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-user me-2"></i>Profile Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone">
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="bio" class="form-label">Bio/Description</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about this user..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Student-specific fields -->
+                        <div id="studentFields" class="row mb-4" style="display: none;">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-graduation-cap me-2"></i>Student Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="student_id" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="student_id" name="student_id">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="grade_level" class="form-label">Grade Level</label>
+                                <select class="form-select" id="grade_level" name="grade_level">
+                                    <option value="">Select Grade</option>
+                                    <option value="9">Grade 9</option>
+                                    <option value="10">Grade 10</option>
+                                    <option value="11">Grade 11</option>
+                                    <option value="12">Grade 12</option>
+                                    <option value="college">College</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_email" class="form-label">Parent Email</label>
+                                <input type="email" class="form-control" id="parent_email" name="parent_email">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_phone" class="form-label">Parent Phone</label>
+                                <input type="tel" class="form-control" id="parent_phone" name="parent_phone">
+                            </div>
+                        </div>
+
+                        <!-- Instructor-specific fields -->
+                        <div id="instructorFields" class="row mb-4" style="display: none;">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-chalkboard-teacher me-2"></i>Instructor Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">Department</label>
+                                <input type="text" class="form-control" id="department" name="department">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="office_location" class="form-label">Office Location</label>
+                                <input type="text" class="form-control" id="office_location" name="office_location">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="office_hours" class="form-label">Office Hours</label>
+                                <input type="text" class="form-control" id="office_hours" name="office_hours" placeholder="e.g., Mon-Fri 9-11 AM">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="specialization" class="form-label">Specialization</label>
+                                <input type="text" class="form-control" id="specialization" name="specialization">
+                            </div>
+                        </div>
+
+                        <!-- Account Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Account Settings
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        Account is active
+                                    </label>
+                                </div>
+                                <div class="form-text">Inactive users cannot log in.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_welcome_email" name="send_welcome_email" checked>
+                                    <label class="form-check-label" for="send_welcome_email">
+                                        Send welcome email
+                                    </label>
+                                </div>
+                                <div class="form-text">Send login credentials via email.</div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i>Create User
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('role').addEventListener('change', function() {
+    const studentFields = document.getElementById('studentFields');
+    const instructorFields = document.getElementById('instructorFields');
+    
+    // Hide all fields first
+    studentFields.style.display = 'none';
+    instructorFields.style.display = 'none';
+    
+    // Show relevant fields based on role
+    if (this.value === 'student') {
+        studentFields.style.display = 'block';
+    } else if (this.value === 'instructor') {
+        instructorFields.style.display = 'block';
+    }
+});
+
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value) {
+        confirmPassword.dispatchEvent(new Event('input'));
+    }
+});
+
+// Form validation
+document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (password.length < 8) {
+        e.preventDefault();
+        alert('Password must be at least 8 characters long!');
+        return false;
+    }
+});
+</script>
+{% endblock %} 

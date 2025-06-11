@@ -1,0 +1,333 @@
+{% extends 'admin/base.html' %}
+{% block title %}Edit User - Admin Panel{% endblock %}
+{% block page_title %}Edit User{% endblock %}
+{% block page_subtitle %}Modify user information and settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user-edit me-2"></i>Edit User: {{ user.email }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="editUserForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                <div class="form-text">This will be used as the login username.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Role *</label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="student" {% if user.role == 'student' %}selected{% endif %}>Student</option>
+                                    <option value="instructor" {% if user.role == 'instructor' %}selected{% endif %}>Instructor</option>
+                                    <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Password Change (Optional) -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-key me-2"></i>Password Change (Optional)
+                                </h5>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Leave password fields empty to keep the current password.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password">
+                                <div class="form-text">Minimum 8 characters recommended.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                            </div>
+                        </div>
+
+                        <!-- Profile Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-user me-2"></i>Profile Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{% if user.role == 'student' and user.student_profile %}{{ user.student_profile.name }}{% elif user.role == 'instructor' and user.instructor_profile %}{{ user.instructor_profile.name }}{% endif %}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{% if user.role == 'student' and user.student_profile %}{{ user.student_profile.phone }}{% elif user.role == 'instructor' and user.instructor_profile %}{{ user.instructor_profile.phone }}{% endif %}">
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="bio" class="form-label">Bio/Description</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about this user...">{% if user.role == 'student' and user.student_profile %}{{ user.student_profile.bio }}{% elif user.role == 'instructor' and user.instructor_profile %}{{ user.instructor_profile.bio }}{% endif %}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Student-specific fields -->
+                        <div id="studentFields" class="row mb-4" {% if user.role != 'student' %}style="display: none;"{% endif %}>
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-graduation-cap me-2"></i>Student Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="student_id" class="form-label">Student ID</label>
+                                <input type="text" class="form-control" id="student_id" name="student_id" 
+                                       value="{% if user.student_profile %}{{ user.student_profile.student_id }}{% endif %}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="grade_level" class="form-label">Grade Level</label>
+                                <select class="form-select" id="grade_level" name="grade_level">
+                                    <option value="">Select Grade</option>
+                                    <option value="9" {% if user.student_profile and user.student_profile.grade_level == '9' %}selected{% endif %}>Grade 9</option>
+                                    <option value="10" {% if user.student_profile and user.student_profile.grade_level == '10' %}selected{% endif %}>Grade 10</option>
+                                    <option value="11" {% if user.student_profile and user.student_profile.grade_level == '11' %}selected{% endif %}>Grade 11</option>
+                                    <option value="12" {% if user.student_profile and user.student_profile.grade_level == '12' %}selected{% endif %}>Grade 12</option>
+                                    <option value="college" {% if user.student_profile and user.student_profile.grade_level == 'college' %}selected{% endif %}>College</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_email" class="form-label">Parent Email</label>
+                                <input type="email" class="form-control" id="parent_email" name="parent_email" 
+                                       value="{% if user.student_profile %}{{ user.student_profile.parent_email }}{% endif %}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_phone" class="form-label">Parent Phone</label>
+                                <input type="tel" class="form-control" id="parent_phone" name="parent_phone" 
+                                       value="{% if user.student_profile %}{{ user.student_profile.parent_phone }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <!-- Instructor-specific fields -->
+                        <div id="instructorFields" class="row mb-4" {% if user.role != 'instructor' %}style="display: none;"{% endif %}>
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-chalkboard-teacher me-2"></i>Instructor Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">Department</label>
+                                <input type="text" class="form-control" id="department" name="department" 
+                                       value="{% if user.instructor_profile %}{{ user.instructor_profile.department }}{% endif %}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="office_location" class="form-label">Office Location</label>
+                                <input type="text" class="form-control" id="office_location" name="office_location" 
+                                       value="{% if user.instructor_profile %}{{ user.instructor_profile.office_location }}{% endif %}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="office_hours" class="form-label">Office Hours</label>
+                                <input type="text" class="form-control" id="office_hours" name="office_hours" 
+                                       value="{% if user.instructor_profile %}{{ user.instructor_profile.office_hours }}{% endif %}" placeholder="e.g., Mon-Fri 9-11 AM">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="specialization" class="form-label">Specialization</label>
+                                <input type="text" class="form-control" id="specialization" name="specialization" 
+                                       value="{% if user.instructor_profile %}{{ user.instructor_profile.specialization }}{% endif %}">
+                            </div>
+                        </div>
+
+                        <!-- Account Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Account Settings
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if user.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Account is active
+                                    </label>
+                                </div>
+                                <div class="form-text">Inactive users cannot log in.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="send_notification" name="send_notification">
+                                    <label class="form-check-label" for="send_notification">
+                                        Send notification email
+                                    </label>
+                                </div>
+                                <div class="form-text">Notify user about account changes.</div>
+                            </div>
+                        </div>
+
+                        <!-- User Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-chart-bar me-2"></i>User Statistics
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-info">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Created</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ user.created_at.strftime('%Y-%m-%d') }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-success">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Last Login</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                            {% if user.last_login %}
+                                                {{ user.last_login.strftime('%Y-%m-%d') }}
+                                            {% else %}
+                                                Never
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-warning">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Login Count</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ user.login_count or 0 }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-primary">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Status</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">
+                                            {% if user.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancel
+                                    </a>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Save Changes
+                                        </button>
+                                        <a href="{{ url_for('admin.users') }}" class="btn btn-outline-danger ms-2">
+                                            <i class="fas fa-trash me-1"></i>Delete User
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('role').addEventListener('change', function() {
+    const studentFields = document.getElementById('studentFields');
+    const instructorFields = document.getElementById('instructorFields');
+    
+    // Hide all fields first
+    studentFields.style.display = 'none';
+    instructorFields.style.display = 'none';
+    
+    // Show relevant fields based on role
+    if (this.value === 'student') {
+        studentFields.style.display = 'block';
+    } else if (this.value === 'instructor') {
+        instructorFields.style.display = 'block';
+    }
+});
+
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = this.value;
+    
+    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+        this.setCustomValidity('Passwords do not match');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('new_password').addEventListener('input', function() {
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value) {
+        confirmPassword.dispatchEvent(new Event('input'));
+    }
+});
+
+// Form validation
+document.getElementById('editUserForm').addEventListener('submit', function(e) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (newPassword && newPassword.length < 8) {
+        e.preventDefault();
+        alert('Password must be at least 8 characters long!');
+        return false;
+    }
+});
+</script>
+{% endblock %} 

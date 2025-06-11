@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ quiz.title }}</h2>
+    <p>{{ quiz.description }}</p>
+    {% if not submission %}
+    <div class="alert alert-warning" id="timer-box">
+        Time Remaining: <span id="timer">05:00</span>
+    </div>
+    <form method="POST" id="quiz-form">
+        {{ csrf_token() }}
+        <ol>
+        {% for q in questions %}
+            <li class="mb-3">
+                <div><b>{{ q.question_text }}</b></div>
+                {% set opts = q.options | from_json if q.options else [] %}
+                {% for opt in opts %}
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="q_{{ loop.parent.index0 }}" id="q_{{ loop.parent.index0 }}_{{ loop.index }}" value="{{ opt }}">
+                    <label class="form-check-label" for="q_{{ loop.parent.index0 }}_{{ loop.index }}">{{ opt }}</label>
+                </div>
+                {% endfor %}
+            </li>
+        {% endfor %}
+        </ol>
+        <button type="submit" class="btn btn-success">Submit Quiz</button>
+    </form>
+    <script>
+    let totalSeconds = 5 * 60;
+    const timerEl = document.getElementById('timer');
+    const form = document.getElementById('quiz-form');
+    function updateTimer() {
+        const min = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const sec = String(totalSeconds % 60).padStart(2, '0');
+        timerEl.textContent = `${min}:${sec}`;
+        if (totalSeconds <= 0) {
+            clearInterval(timerInterval);
+            form.submit();
+        }
+        totalSeconds--;
+    }
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+    form.addEventListener('submit', function() {
+        clearInterval(timerInterval);
+    });
+    </script>
+    {% else %}
+    <div class="alert alert-info">You have already submitted this quiz.</div>
+    <b>Your Score:</b> {{ submission.score }}%<br>
+    <ol>
+    {% for q in questions %}
+        <li>
+            <b>{{ q.question_text }}</b><br>
+            <b>Your answer:</b> {{ student_answers[loop.index0|string] if student_answers[loop.index0|string] else 'No answer' }}<br>
+            <b>Correct answer:</b> {{ q.correct_answer }}
+        </li>
+    {% endfor %}
+    </ol>
+    {% endif %}
+    <a href="{{ url_for('student.course_detail', course_id=quiz.course_id) }}" class="btn btn-secondary mt-3">Back to Course</a>
+</div>
+{% endblock %} 

@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-question-circle"></i> {{ action if action else 'Create' }} Quiz</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.title.label(class="form-label") }}
+                                    {{ form.title(class="form-control", placeholder="Enter quiz title") }}
+                                    {% if form.title.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.title.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.time_limit.label(class="form-label") }}
+                                    {{ form.time_limit(class="form-control", placeholder="Minutes") }}
+                                    {% if form.time_limit.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.time_limit.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows=3, placeholder="Enter quiz description") }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.description.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.start_time.label(class="form-label") }}
+                                    {{ form.start_time(class="form-control", type="datetime-local") }}
+                                    {% if form.start_time.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.start_time.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.end_time.label(class="form-label") }}
+                                    {{ form.end_time(class="form-control", type="datetime-local") }}
+                                    {% if form.end_time.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.end_time.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            {% if action == 'Edit' %}
+                                <a href="{{ url_for('instructor.manage_quiz', course_id=course.id, quiz_id=quiz.id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {% else %}
+                                <a href="{{ url_for('instructor.manage_course', course_id=course.id) }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            {% endif %}
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set default datetime values to current time and 1 hour from now
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+    
+    // Format datetime for input fields (YYYY-MM-DDTHH:MM)
+    const formatDateTime = (date) => {
+        return date.toISOString().slice(0, 16);
+    };
+    
+    // Check if this is edit mode
+    const isEditMode = {% if action == 'Edit' %}true{% else %}false{% endif %};
+    
+    // Set default values if fields are empty (only for create mode)
+    if (!isEditMode) {
+        const startTimeField = document.getElementById('start_time');
+        const endTimeField = document.getElementById('end_time');
+        
+        if (startTimeField && !startTimeField.value) {
+            startTimeField.value = formatDateTime(now);
+        }
+        
+        if (endTimeField && !endTimeField.value) {
+            endTimeField.value = formatDateTime(oneHourLater);
+        }
+    }
+});
+</script>
+{% endblock %} 

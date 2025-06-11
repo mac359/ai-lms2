@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Create Assignment for {{ course.title }}</h2>
+    <form method="POST">
+        {{ form.csrf_token }}
+        <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control") }}
+            {% if form.title.errors %}
+                {% for error in form.title.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.instructions.label(class="form-label") }}
+            {{ form.instructions(class="form-control", rows=5) }}
+            {% if form.instructions.errors %}
+                {% for error in form.instructions.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            <label for="due_date" class="form-label">Due Date and Time</label>
+            <input type="datetime-local" class="form-control" id="due_date" name="due_date" required>
+            <div class="form-text">Select the date and time when the assignment is due</div>
+            {% if form.due_date.errors %}
+                {% for error in form.due_date.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="mb-3">
+            {{ form.points.label(class="form-label") }}
+            {{ form.points(class="form-control", type="number", min="0", max="100") }}
+            {% if form.points.errors %}
+                {% for error in form.points.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary">Create Assignment</button>
+        <a href="{{ url_for('instructor.manage_course', course_id=course.id) }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,409 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.users') }}?role=student" class="btn btn-primary">
+                <i class="fas fa-user-graduate me-1"></i>Manage Students
+            </a>
+            <a href="{{ url_for('admin.users') }}?role=instructor" class="btn btn-success">
+                <i class="fas fa-chalkboard-teacher me-1"></i>Manage Instructors
+            </a>
+            <a href="{{ url_for('admin.courses') }}" class="btn btn-info">
+                <i class="fas fa-book me-1"></i>Manage Courses
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Students
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_students }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Instructors
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_instructors }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Courses
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_courses }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Enrollments
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_enrollments }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.create_user') }}?role=student" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-user-plus me-2"></i>Add Student
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.create_user') }}?role=instructor" class="btn btn-outline-success w-100">
+                                <i class="fas fa-chalkboard-teacher me-2"></i>Add Instructor
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.create_course') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-plus me-2"></i>Create Course
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('admin.users') }}" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-users me-2"></i>View All Users
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Activity Stats -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>User Activity
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-success">{{ active_students }}</div>
+                                <div class="text-muted">Active Students</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-info">{{ active_instructors }}</div>
+                                <div class="text-muted">Active Instructors</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-danger">{{ total_students - active_students }}</div>
+                                <div class="text-muted">Inactive Students</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-warning">{{ total_instructors - active_instructors }}</div>
+                                <div class="text-muted">Inactive Instructors</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-clock me-2"></i>Recent Activity
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-user-plus text-success me-2"></i>
+                                New Students
+                            </div>
+                            <span class="badge bg-success rounded-pill">{{ recent_students|length }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-chalkboard-teacher text-info me-2"></i>
+                                New Instructors
+                            </div>
+                            <span class="badge bg-info rounded-pill">{{ recent_instructors|length }}</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-book text-primary me-2"></i>
+                                New Courses
+                            </div>
+                            <span class="badge bg-primary rounded-pill">{{ recent_courses|length }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Users and Courses -->
+    <div class="row">
+        <!-- Recent Students -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user-graduate me-2"></i>Recent Students
+                    </h6>
+                    <a href="{{ url_for('admin.users') }}?role=student" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_students %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for student in recent_students %}
+                                    <tr>
+                                        <td>
+                                            {% if student.student_profile %}
+                                                {{ student.student_profile.name }}
+                                            {% else %}
+                                                <span class="text-muted">No name</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ student.email }}</td>
+                                        <td>
+                                            {% if student.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ student.created_at.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No students found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Instructors -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Recent Instructors
+                    </h6>
+                    <a href="{{ url_for('admin.users') }}?role=instructor" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_instructors %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for instructor in recent_instructors %}
+                                    <tr>
+                                        <td>
+                                            {% if instructor.instructor_profile %}
+                                                {{ instructor.instructor_profile.name }}
+                                            {% else %}
+                                                <span class="text-muted">No name</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ instructor.email }}</td>
+                                        <td>
+                                            {% if instructor.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ instructor.created_at.strftime('%Y-%m-%d') }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No instructors found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Courses -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-book me-2"></i>Recent Courses
+                    </h6>
+                    <a href="{{ url_for('admin.courses') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_courses %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Instructor</th>
+                                        <th>Students</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for course in recent_courses %}
+                                    <tr>
+                                        <td>{{ course.title }}</td>
+                                        <td>
+                                            {% if course.instructor and course.instructor.instructor_profile %}
+                                                {{ course.instructor.instructor_profile.name }}
+                                            {% elif course.instructor %}
+                                                {{ course.instructor.email }}
+                                            {% else %}
+                                                <span class="text-muted">No instructor</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ course.students|length if course.students else 0 }}</span>
+                                        </td>
+                                        <td>
+                                            {% if course.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ course.created_at.strftime('%Y-%m-%d') }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('admin.view_course', course_id=course.id) }}" class="btn btn-sm btn-outline-info" title="View Course">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('admin.edit_course', course_id=course.id) }}" class="btn btn-sm btn-outline-primary" title="Edit Course">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center">No courses found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh stats every 30 seconds
+setInterval(function() {
+    fetch('/admin/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Update stats (you can add more sophisticated updates here)
+            console.log('Stats updated:', data);
+        })
+        .catch(error => console.error('Error fetching stats:', error));
+}, 30000);
+
+// Add click handlers for quick action buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // You can add more interactive functionality here
+    console.log('Admin dashboard loaded');
+});
+</script>
+{% endblock %} 

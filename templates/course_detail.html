@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ course.title }}</h2>
+            <p class="lead">{{ course.description }}</p>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Course Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Instructor:</strong> {{ instructor.email }}</p>
+                    <p><strong>Created At:</strong> {{ course.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Modules</h5>
+                </div>
+                <div class="card-body">
+                    {% if modules %}
+                        <div class="list-group">
+                            {% for module in modules %}
+                                <div class="list-group-item">
+                                    <h6 class="mb-1">{{ module.title }}</h6>
+                                    <p class="mb-1">{{ module.description }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No modules available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quizzes</h5>
+                </div>
+                <div class="card-body">
+                    {% if quizzes %}
+                        <div class="list-group">
+                            {% for quiz in quizzes %}
+                                <div class="list-group-item">
+                                    <h6 class="mb-1">{{ quiz.title }}</h6>
+                                    <p class="mb-1">{{ quiz.description }}</p>
+                                    {% if quiz.time_limit %}
+                                        <p class="mb-1"><small class="text-muted">Time Limit: {{ quiz.time_limit }} minutes</small></p>
+                                    {% endif %}
+                                    
+                                    {% if quiz.start_time and current_time < quiz.start_time %}
+                                        <p class="text-warning mb-1">Available from: {{ quiz.start_time.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    {% elif quiz.end_time and current_time > quiz.end_time %}
+                                        <p class="text-danger mb-1">Quiz has expired</p>
+                                    {% else %}
+                                        {% set submission = quiz.submissions|selectattr('student_id', 'equalto', current_user.id)|first %}
+                                        {% if submission and submission.end_time %}
+                                            <p class="text-success mb-1">Completed - Score: {{ "%.1f"|format(submission.score) }}%</p>
+                                            <a href="{{ url_for('student.quiz_result', course_id=course.id, quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">View Results</a>
+                                        {% else %}
+                                            <a href="{{ url_for('student.take_quiz', course_id=course.id, quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">Take Quiz</a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No quizzes available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Assignments</h5>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                        <div class="list-group">
+                            {% for assignment in assignments %}
+                                <div class="list-group-item">
+                                    <h6 class="mb-1">{{ assignment.title }}</h6>
+                                    <p class="mb-1">{{ assignment.instructions }}</p>
+                                    <small class="text-muted">Due: {{ assignment.due_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No assignments available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Announcements</h5>
+                </div>
+                <div class="card-body">
+                    {% if announcements %}
+                        <div class="list-group">
+                            {% for announcement in announcements %}
+                                <div class="list-group-item">
+                                    <h6 class="mb-1">{{ announcement.title }}</h6>
+                                    <p class="mb-1">{{ announcement.message }}</p>
+                                    <small class="text-muted">Posted: {{ announcement.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No announcements available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Attachments</h5>
+                </div>
+                <div class="card-body">
+                    {% if attachments %}
+                        <div class="list-group">
+                            {% for attachment in attachments %}
+                                <div class="list-group-item">
+                                    <a href="{{ url_for('uploaded_file', filename=attachment.filename) }}" target="_blank">
+                                        {{ attachment.filename }}
+                                    </a>
+                                    <small class="text-muted d-block">Uploaded: {{ attachment.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No attachments available yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Meetings</h5>
+                </div>
+                <div class="card-body">
+                    {% if meetings %}
+                        <div class="list-group">
+                            {% for meeting in meetings %}
+                                <div class="list-group-item">
+                                    <h6 class="mb-1">{{ meeting.title }}</h6>
+                                    <p class="mb-1">{{ meeting.description }}</p>
+                                    <p class="mb-1">
+                                        <strong>Scheduled:</strong> {{ meeting.scheduled_time.strftime('%Y-%m-%d %H:%M') }}
+                                    </p>
+                                    <a href="{{ meeting.meeting_link }}" target="_blank" class="btn btn-sm btn-primary">Join Meeting</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No meetings scheduled yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    {% if current_user.role == 'instructor' %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Your Courses</h2>
+        <a href="{{ url_for('instructor.create_course') }}" class="btn btn-primary">Create Course</a>
+    </div>
+    <div class="row">
+        {% for course in courses %}
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ course.title }}</h5>
+                    <p class="card-text">{{ course.description }}</p>
+                    <a href="{{ url_for('instructor.manage_course', course_id=course.id) }}" class="btn btn-outline-primary btn-sm">Manage</a>
+                    <form action="{{ url_for('instructor.delete_course', course_id=course.id) }}" method="post" style="display:inline-block;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif current_user.role == 'student' %}
+    <h2 class="mb-3">All Courses</h2>
+    <div class="row">
+        {% for course in courses %}
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ course.title }}</h5>
+                    <p class="card-text">{{ course.description }}</p>
+                    {% if course.id not in enrolled_course_ids %}
+                    <form action="{{ url_for('student.enroll_course', course_id=course.id) }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success btn-sm">Enroll</button>
+                    </form>
+                    {% else %}
+                    <span class="badge bg-info text-dark">Enrolled</span>
+                    <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="btn btn-primary btn-sm ms-2">View</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

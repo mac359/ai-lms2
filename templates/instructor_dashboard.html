@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Instructor Dashboard</h2>
+    <hr>
+    <h4>Your Courses</h4>
+    {% if courses %}
+    <div class="accordion" id="coursesAccordion">
+        {% for course in courses %}
+        <div class="accordion-item mb-2">
+            <h2 class="accordion-header" id="heading{{ course.id }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ course.id }}" aria-expanded="false" aria-controls="collapse{{ course.id }}">
+                    {{ course.title }}
+                </button>
+            </h2>
+            <div id="collapse{{ course.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ course.id }}" data-bs-parent="#coursesAccordion">
+                <div class="accordion-body">
+                    <h5>Enrolled Students</h5>
+                    {% if course.enrollments %}
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enrollment in course.enrollments %}
+                            <tr>
+                                <td>{{ enrollment.student.email }}</td>
+                                <td>{{ enrollment.student.email }}</td>
+                                <td>
+                                    {% set grades = enrollment.student.grades | selectattr('course_id', 'equalto', course.id) | list %}
+                                    {% if grades %}
+                                        {{ (grades | map(attribute='grade_value') | list) | join(', ') }}
+                                    {% else %}
+                                        No grades yet
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No students enrolled yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>You are not teaching any courses yet.</p>
+    {% endif %}
+</div>
+{% endblock %} 

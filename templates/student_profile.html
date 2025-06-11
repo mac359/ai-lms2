@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Complete Your Student Profile</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.grade_level.label(class="form-label") }}
+            {{ form.grade_level(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.subject_interests.label(class="form-label") }}
+            {{ form.subject_interests(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.learning_style.label(class="form-label") }}
+            {{ form.learning_style(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.support_needs.label(class="form-label") }}
+            {{ form.support_needs(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.goal.label(class="form-label") }}
+            {{ form.goal(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-success">Save Profile</button>
+    </form>
+</div>
+{% endblock %} 

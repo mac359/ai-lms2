@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }} - Quiz{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>{{ quiz.title }}</h4>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-2">Question {{ current_part }} of {{ total_parts }}</span>
+                        <div id="timer" class="badge bg-warning text-dark me-2">02:00</div>
+                        <div id="behavior-indicator" class="d-flex">
+                            <span id="focus-badge" class="badge bg-success me-1">Focus: --</span>
+                            <span id="frustration-badge" class="badge bg-danger">Frustration: --</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if debug_message %}
+                    <div class="alert alert-secondary"><strong>DEBUG:</strong> {{ debug_message }}</div>
+                    {% endif %}
+                    {% if current_question %}
+                    <form method="POST" id="quizForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="current_part" value="{{ current_part }}">
+                        <input type="hidden" name="total_parts" value="{{ total_parts }}">
+                        <input type="hidden" name="answers" value="{{ answers }}" id="answersInput">
+                        <input type="hidden" name="question_start_time" id="questionStartTimeInput" value="{{ question_start_time|default(0) }}">
+                        
+                        <div class="question-container">
+                            <h5 class="mb-3">
+                                Question {{ current_part }}: {{ current_question.question_text }}
+                                <span class="badge bg-info ms-2">{{ current_question.difficulty }}</span>
+                            </h5>
+                            
+                            <div class="options-container">
+                                {% set letters = ['A', 'B', 'C', 'D'] %}
+                                {% set opts = current_question.options | from_json if current_question.options else [] %}
+                                {% for opt in opts %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="question_{{ current_question.id }}" id="option_{{ letters[loop.index0] }}" value="{{ letters[loop.index0] }}">
+                                    <label class="form-check-label" for="option_{{ letters[loop.index0] }}">
+                                        <strong>{{ letters[loop.index0] }}.</strong> {{ opt }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            {% if current_part > 1 %}
+                            <button type="button" class="btn btn-secondary" onclick="previousQuestion()">
+                                <i class="fas fa-arrow-left"></i> Previous
+                            </button>
+                            {% else %}
+                            <div></div>
+                            {% endif %}
+                            
+                            <div>
+                                <button type="button" class="btn btn-info me-2" onclick="saveProgress()">
+                                    <i class="fas fa-save"></i> Save Progress
+                                </button>
+                                {% if current_part < total_parts %}
+                                <button type="submit" class="btn btn-primary">
+                                    Next <i class="fas fa-arrow-right"></i>
+                                </button>
+                                {% else %}
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check"></i> Submit Quiz
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No questions available for this quiz.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-line"></i> Real-time Behavior</h5>
+                </div>
+                <div class="card-body">
+                    <div class="behavior-chart">
+                        <canvas id="behaviorChart" width="300" height="200"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        <div class="progress mb-2">
+                            <div id="focus-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                                Focus: 0%
+                            </div>
+                        </div>
+                        <div class="progress mb-2">
+                            <div id="frustration-progress" class="progress-bar bg-danger" role="progressbar" style="width: 0%">
+                                Frustration: 0%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Question difficulty adapts based on your focus and frustration levels.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Progress</h5>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ (current_part / total_parts) * 100 }}%">
+                            {{ current_part }}/{{ total_parts }}
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <small class="text-muted">{{ ((current_part / total_parts) * 100) | round(1) }}% Complete</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Behavior Monitoring Modal -->
+<div class="modal fade" id="behaviorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Behavior Monitoring</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div id="camera-feed" class="mb-3">
+                        <video id="video" width="320" height="240" autoplay></video>
+                    </div>
+                    <div id="behavior-status" class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin"></i> Monitoring your behavior...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let timeLeft = 120; // 2 minutes in seconds
+let timerInterval;
+let behaviorChart;
+let answers = {{ answers | safe }};
+let currentPart = {{ current_part }};
+let totalParts = {{ total_parts }};
+
+// Initialize behavior chart
+function initBehaviorChart() {
+    const ctx = document.getElementById('behaviorChart').getContext('2d');
+    behaviorChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Focus',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }, {
+                label: 'Frustration',
+                data: [],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1
+                }
+            }
+        }
+    });
+}
+
+// Update timer
+function updateTimer() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    document.getElementById('timer').textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (timeLeft <= 30) {
+        document.getElementById('timer').className = 'badge bg-danger me-2';
+    } else if (timeLeft <= 60) {
+        document.getElementById('timer').className = 'badge bg-warning text-dark me-2';
+    }
+    
+    if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        alert('Time\'s up! Moving to next question...');
+        document.getElementById('quizForm').submit();
+    }
+}
+
+// Start timer for current question
+function startTimer() {
+    timeLeft = 120; // Reset to 2 minutes
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+    }, 1000);
+    updateTimer();
+}
+
+// Update behavior display
+function updateBehavior(focus, frustration) {
+    const focusPercent = Math.round(focus * 100);
+    const frustrationPercent = Math.round(frustration * 100);
+    
+    // Update badges
+    document.getElementById('focus-badge').textContent = `Focus: ${focusPercent}%`;
+    document.getElementById('frustration-badge').textContent = `Frustration: ${frustrationPercent}%`;
+    
+    // Update progress bars
+    document.getElementById('focus-progress').style.width = `${focusPercent}%`;
+    document.getElementById('focus-progress').textContent = `Focus: ${focusPercent}%`;
+    
+    document.getElementById('frustration-progress').style.width = `${frustrationPercent}%`;
+    document.getElementById('frustration-progress').textContent = `Frustration: ${frustrationPercent}%`;
+    
+    // Update chart
+    const now = new Date().toLocaleTimeString();
+    behaviorChart.data.labels.push(now);
+    behaviorChart.data.datasets[0].data.push(focus);
+    behaviorChart.data.datasets[1].data.push(frustration);
+    
+    if (behaviorChart.data.labels.length > 10) {
+        behaviorChart.data.labels.shift();
+        behaviorChart.data.datasets[0].data.shift();
+        behaviorChart.data.datasets[1].data.shift();
+    }
+    
+    behaviorChart.update();
+}
+
+// Save current progress
+function saveProgress() {
+    const currentQuestionId = {{ current_question.id if current_question else 'null' }};
+    if (currentQuestionId) {
+        const selectedAnswer = document.querySelector(`input[name="question_${currentQuestionId}"]:checked`);
+        if (selectedAnswer) {
+            answers[currentQuestionId] = selectedAnswer.value;
+            document.getElementById('answersInput').value = JSON.stringify(answers);
+            alert('Progress saved!');
+        } else {
+            alert('Please select an answer before saving.');
+        }
+    }
+}
+
+// Previous question (if available)
+function previousQuestion() {
+    if (currentPart > 1) {
+        // In a real implementation, you'd need to store previous questions
+        alert('Previous question functionality would be implemented here.');
+    }
+}
+
+// Initialize behavior monitoring
+function initBehaviorMonitoring() {
+    // Fetch real behavior data every 3 seconds
+    setInterval(() => {
+        fetch('/student/get_quiz_behavior_data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateBehavior(data.focus_score, data.frustration_score);
+                    
+                    // Show difficulty suggestion
+                    if (data.suggested_difficulty) {
+                        showDifficultySuggestion(data.suggested_difficulty, data.difficulty_reason);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching behavior data:', error);
+                // Fallback to simulated data
+                const focus = Math.random() * 0.3 + 0.5;
+                const frustration = Math.random() * 0.4 + 0.1;
+                updateBehavior(focus, frustration);
+            });
+    }, 3000);
+}
+
+// Show difficulty suggestion
+function showDifficultySuggestion(difficulty, reason) {
+    const suggestionDiv = document.getElementById('difficulty-suggestion');
+    if (!suggestionDiv) {
+        const div = document.createElement('div');
+        div.id = 'difficulty-suggestion';
+        div.className = 'alert alert-info mt-2';
+        div.innerHTML = `
+            <i class="fas fa-lightbulb"></i>
+            <strong>Next question difficulty:</strong> ${difficulty} - ${reason}
+        `;
+        document.querySelector('.question-container').appendChild(div);
+    } else {
+        suggestionDiv.innerHTML = `
+            <i class="fas fa-lightbulb"></i>
+            <strong>Next question difficulty:</strong> ${difficulty} - ${reason}
+        `;
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initBehaviorChart();
+    startTimer();
+    initBehaviorMonitoring();
+    
+    // Auto-save progress every 30 seconds
+    setInterval(saveProgress, 30000);
+    
+    // Warn before leaving page
+    window.addEventListener('beforeunload', function(e) {
+        if (currentPart < totalParts) {
+            e.preventDefault();
+            e.returnValue = 'Are you sure you want to leave? Your progress may be lost.';
+        }
+    });
+});
+
+// Handle form submission
+document.getElementById('quizForm').addEventListener('submit', function(e) {
+    // Save current answer before submitting
+    const currentQuestionId = {{ current_question.id if current_question else 'null' }};
+    if (currentQuestionId) {
+        const selectedAnswer = document.querySelector(`input[name="question_${currentQuestionId}"]:checked`);
+        if (selectedAnswer) {
+            answers[currentQuestionId] = selectedAnswer.value;
+            document.getElementById('answersInput').value = JSON.stringify(answers);
+        }
+    }
+});
+</script>
+{% endblock %} 

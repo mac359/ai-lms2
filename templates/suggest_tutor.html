@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2><i class="fas fa-user-graduate"></i> AI Tutor Matching System</h2>
+    
+    <!-- Student Profile Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="fas fa-user"></i> Your Profile</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ student_profile.student_name or 'Not specified' }}</p>
+                    <p><strong>Grade Level:</strong> {{ student_profile.grade_level or 'Not specified' }}</p>
+                    <p><strong>Subject Interests:</strong> {{ student_profile.subject_interests or 'Not specified' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Learning Style:</strong> {{ student_profile.learning_style or 'Not specified' }}</p>
+                    <p><strong>Support Needed:</strong> {{ student_profile.support_needs or 'Not specified' }}</p>
+                    <p><strong>Goal:</strong> {{ student_profile.goal or 'Not specified' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Instructors Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="fas fa-chalkboard-teacher"></i> Available Instructors</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+    {% for inst in instructors %}
+                <div class="col-md-6 mb-3">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">{{ inst.name or 'Unnamed Instructor' }}</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text"><strong>Expertise:</strong> {{ inst.area_of_expertise or 'Not specified' }}</p>
+                            <p class="card-text"><small class="text-muted">{{ inst.bio or 'No bio available' }}</small></p>
+                            <p class="card-text"><strong>Teaching Style:</strong> {{ inst.teaching_style or 'Not specified' }}</p>
+                            <p class="card-text"><strong>Experience:</strong> {{ inst.years_of_experience or 'Not specified' }} years</p>
+                            <p class="card-text"><strong>Subjects:</strong> {{ inst.subjects_taught or 'Not specified' }}</p>
+                            {% if inst.student_feedback_summary %}
+                            <p class="card-text"><strong>Student Feedback:</strong> {{ inst.student_feedback_summary }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+    {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Analysis Button -->
+    <div class="text-center mb-4">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-magic"></i> Get AI-Powered Tutor Recommendations
+            </button>
+    </form>
+    </div>
+
+    <!-- AI Recommendations Section -->
+    {% if parsed_recommendations %}
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="fas fa-robot"></i> AI Recommendations</h4>
+        </div>
+        <div class="card-body">
+            {% if parsed_recommendations.recommended_instructors %}
+                <div class="row">
+                    {% for instructor in parsed_recommendations.recommended_instructors %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">{{ instructor.instructor_name }}</h5>
+                                    <span class="badge bg-light text-dark fs-6">{{ instructor.overall_match_score }}% Match</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Match Score Breakdown -->
+                                <div class="mb-3">
+                                    <h6>Match Score Breakdown:</h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small>Subject Match:</small><br>
+                                            <div class="progress mb-2" style="height: 20px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" 
+                                                     style="width: {{ instructor.subject_match }}%">
+                                                    {{ instructor.subject_match }}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small>Teaching Style:</small><br>
+                                            <div class="progress mb-2" style="height: 20px;">
+                                                <div class="progress-bar bg-info" role="progressbar" 
+                                                     style="width: {{ instructor.teaching_style_match }}%">
+                                                    {{ instructor.teaching_style_match }}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small>Experience Level:</small><br>
+                                            <div class="progress mb-2" style="height: 20px;">
+                                                <div class="progress-bar bg-warning" role="progressbar" 
+                                                     style="width: {{ instructor.experience_match }}%">
+                                                    {{ instructor.experience_match }}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small>Student Feedback:</small><br>
+                                            <div class="progress mb-2" style="height: 20px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ instructor.feedback_match }}%">
+                                                    {{ instructor.feedback_match }}%
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Recommendation Level -->
+                                <div class="mb-3">
+                                    <span class="badge {% if instructor.recommendation_level == 'Excellent' %}bg-success{% elif instructor.recommendation_level == 'Good' %}bg-warning{% else %}bg-secondary{% endif %} fs-6">
+                                        {{ instructor.recommendation_level }} Match
+                                    </span>
+                                </div>
+
+                                <!-- Reasoning -->
+                                <div class="mb-3">
+                                    <h6>Why This Match:</h6>
+                                    <p class="card-text">{{ instructor.reasoning }}</p>
+                                </div>
+
+                                <!-- Strengths -->
+                                {% if instructor.strengths %}
+                                <div class="mb-3">
+                                    <h6>Key Strengths:</h6>
+                                    <ul class="list-unstyled">
+                                        {% for strength in instructor.strengths %}
+                                        <li><i class="fas fa-check text-success"></i> {{ strength }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+    {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Analysis Summary -->
+                {% if parsed_recommendations.analysis_summary %}
+                <div class="mt-4">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0"><i class="fas fa-chart-line"></i> AI Analysis Summary</h5>
+                        </div>
+                    <div class="card-body">
+                            <p class="card-text">{{ parsed_recommendations.analysis_summary }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> No recommendations found or invalid response format.
+                </div>
+                {% if parsed_recommendations.raw_response %}
+                <div class="mt-3">
+                    <h6>Raw AI Response:</h6>
+                    <pre class="bg-light p-3 rounded">{{ parsed_recommendations.raw_response }}</pre>
+            </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Fallback for old format -->
+    {% if gemini_response and not parsed_recommendations %}
+    <div class="card">
+        <div class="card-header">
+            <h4 class="mb-0">AI Response (Legacy Format)</h4>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3 rounded">{{ gemini_response }}</pre>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.progress {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.progress-bar {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %} 

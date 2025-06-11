@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Course: {{ course.title }}</h2>
+    <p>{{ course.description }}</p>
+    <h3>Course Details</h3>
+    <ul>
+        <li><strong>Instructor:</strong> {{ instructor.email }}</li>
+        <li><strong>Created At:</strong> {{ course.created_at }}</li>
+    </ul>
+    <h3>Actions</h3>
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <a href="{{ url_for('instructor.create_module', course_id=course.id) }}" class="btn btn-primary">Create Module</a>
+        <a href="{{ url_for('instructor.create_quiz', course_id=course.id) }}" class="btn btn-primary">Create Quiz</a>
+        <a href="{{ url_for('instructor.create_meeting', course_id=course.id) }}" class="btn btn-primary">Create Meeting</a>
+        <a href="{{ url_for('instructor.create_assignment', course_id=course.id) }}" class="btn btn-primary">Create Assignment</a>
+        <a href="{{ url_for('instructor.create_announcement', course_id=course.id) }}" class="btn btn-primary">Create Announcement</a>
+        <a href="{{ url_for('instructor.upload_attachment_form', course_id=course.id) }}" class="btn btn-primary">Upload Attachment</a>
+        <a href="{{ url_for('instructor.course_detail', course_id=course.id) }}" class="btn btn-secondary">View Course Details</a>
+    </div>
+    <hr>
+    <h4>Modules</h4>
+    <ul>
+        {% for module in modules %}
+        <li>{{ module.title }} - {{ module.description }}
+            <form action="{{ url_for('instructor.delete_module', course_id=course.id, module_id=module.id) }}" method="post" style="display:inline-block;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this module?');">Delete</button>
+            </form>
+        </li>
+        {% else %}<li>No modules yet.</li>{% endfor %}
+    </ul>
+    <h4>Quizzes</h4>
+    <ul>
+        {% for quiz in quizzes %}
+        <li>
+            <strong>{{ quiz.title }}</strong> - {{ quiz.description }}
+            {% if quiz.time_limit %}
+                <br><small class="text-muted">Time Limit: {{ quiz.time_limit }} minutes</small>
+            {% endif %}
+            {% if quiz.start_time and quiz.end_time %}
+                <br><small class="text-muted">Available: {{ quiz.start_time.strftime('%Y-%m-%d %H:%M') }} to {{ quiz.end_time.strftime('%Y-%m-%d %H:%M') }}</small>
+            {% endif %}
+            <div class="mt-2">
+                <a href="{{ url_for('instructor.manage_quiz', course_id=course.id, quiz_id=quiz.id) }}" class="btn btn-sm btn-info">Manage Quiz</a>
+                <form action="{{ url_for('instructor.delete_quiz', course_id=course.id, quiz_id=quiz.id) }}" method="post" style="display:inline-block;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this quiz?');">Delete</button>
+                </form>
+            </div>
+        </li>
+        {% else %}<li>No quizzes yet.</li>{% endfor %}
+    </ul>
+    <h4>Assignments</h4>
+    <ul>
+        {% for assignment in assignments %}
+        <li>{{ assignment.title }} - {{ assignment.instructions }}
+            <a href="{{ url_for('instructor.view_assignment_submissions', course_id=course.id, assignment_id=assignment.id) }}" class="btn btn-sm btn-info">View Submissions</a>
+            <form action="{{ url_for('instructor.delete_assignment', course_id=course.id, assignment_id=assignment.id) }}" method="post" style="display:inline-block;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this assignment?');">Delete</button>
+            </form>
+        </li>
+        {% else %}<li>No assignments yet.</li>{% endfor %}
+    </ul>
+    <h4>Announcements</h4>
+    <ul>
+        {% for announcement in announcements %}
+        <li>{{ announcement.title }} - {{ announcement.message }}
+            <form action="{{ url_for('instructor.delete_announcement', course_id=course.id, announcement_id=announcement.id) }}" method="post" style="display:inline-block;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this announcement?');">Delete</button>
+            </form>
+        </li>
+        {% else %}<li>No announcements yet.</li>{% endfor %}
+    </ul>
+    <h4>Attachments</h4>
+    <ul>
+        {% for attachment in attachments %}
+        <li>
+            <a href="{{ url_for('uploaded_file', filename=attachment.filename) }}" target="_blank">
+                {{ attachment.filename }}
+            </a>
+            <form action="{{ url_for('instructor.delete_attachment', course_id=course.id, attachment_id=attachment.id) }}" method="post" style="display:inline-block;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this attachment?');">Delete</button>
+            </form>
+        </li>
+        {% else %}<li>No attachments yet.</li>{% endfor %}
+    </ul>
+    <h4>Meetings</h4>
+    <ul>
+        {% for meeting in meetings %}
+        <li>{{ meeting.title }} - {{ meeting.description }} ({{ meeting.scheduled_time }})
+            <form action="{{ url_for('instructor.delete_meeting', course_id=course.id, meeting_id=meeting.id) }}" method="post" style="display:inline-block;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this meeting?');">Delete</button>
+            </form>
+        </li>
+        {% else %}<li>No meetings yet.</li>{% endfor %}
+    </ul>
+</div>
+{% endblock %} 

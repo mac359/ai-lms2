@@ -1,0 +1,375 @@
+{% extends 'admin/base.html' %}
+{% block title %}Edit Course - Admin Panel{% endblock %}
+{% block page_title %}Edit Course{% endblock %}
+{% block page_subtitle %}Modify course information and settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-edit me-2"></i>Edit Course: {{ course.title }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="editCourseForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-8 mb-3">
+                                <label for="title" class="form-label">Course Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" value="{{ course.title }}" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="code" class="form-label">Course Code</label>
+                                <input type="text" class="form-control" id="code" name="code" value="{{ course.code or '' }}" placeholder="e.g., MATH101">
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="description" class="form-label">Course Description *</label>
+                                <textarea class="form-control" id="description" name="description" rows="4" required>{{ course.description }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Course Details -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Course Details
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="instructor_id" class="form-label">Instructor *</label>
+                                <select class="form-select" id="instructor_id" name="instructor_id" required>
+                                    <option value="">Select Instructor</option>
+                                    {% for instructor in instructors %}
+                                    <option value="{{ instructor.id }}" {% if course.instructor_id == instructor.id %}selected{% endif %}>
+                                        {% if instructor.instructor_profile %}
+                                            {{ instructor.instructor_profile.name }} ({{ instructor.email }})
+                                        {% else %}
+                                            {{ instructor.email }}
+                                        {% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">Select Category</option>
+                                    <option value="mathematics" {% if course.category == 'mathematics' %}selected{% endif %}>Mathematics</option>
+                                    <option value="science" {% if course.category == 'science' %}selected{% endif %}>Science</option>
+                                    <option value="language" {% if course.category == 'language' %}selected{% endif %}>Language Arts</option>
+                                    <option value="history" {% if course.category == 'history' %}selected{% endif %}>History</option>
+                                    <option value="art" {% if course.category == 'art' %}selected{% endif %}>Art & Music</option>
+                                    <option value="technology" {% if course.category == 'technology' %}selected{% endif %}>Technology</option>
+                                    <option value="physical" {% if course.category == 'physical' %}selected{% endif %}>Physical Education</option>
+                                    <option value="other" {% if course.category == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="level" class="form-label">Difficulty Level</label>
+                                <select class="form-select" id="level" name="level">
+                                    <option value="beginner" {% if course.level == 'beginner' %}selected{% endif %}>Beginner</option>
+                                    <option value="intermediate" {% if course.level == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                                    <option value="advanced" {% if course.level == 'advanced' %}selected{% endif %}>Advanced</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="max_students" class="form-label">Maximum Students</label>
+                                <input type="number" class="form-control" id="max_students" name="max_students" min="1" value="{{ course.max_students or 50 }}">
+                            </div>
+                        </div>
+
+                        <!-- Course Schedule -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-calendar me-2"></i>Course Schedule
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{{ course.start_date.strftime('%Y-%m-%d') if course.start_date else '' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="{{ course.end_date.strftime('%Y-%m-%d') if course.end_date else '' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="meeting_days" class="form-label">Meeting Days</label>
+                                {% set meeting_days = course.meeting_days.split(',') if course.meeting_days else [] %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="monday" name="meeting_days" value="monday" 
+                                           {% if 'monday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="monday">Monday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="tuesday" name="meeting_days" value="tuesday" 
+                                           {% if 'tuesday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="tuesday">Tuesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="wednesday" name="meeting_days" value="wednesday" 
+                                           {% if 'wednesday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="wednesday">Wednesday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="thursday" name="meeting_days" value="thursday" 
+                                           {% if 'thursday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="thursday">Thursday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="friday" name="meeting_days" value="friday" 
+                                           {% if 'friday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="friday">Friday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="saturday" name="meeting_days" value="saturday" 
+                                           {% if 'saturday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="saturday">Saturday</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="sunday" name="meeting_days" value="sunday" 
+                                           {% if 'sunday' in meeting_days %}checked{% endif %}>
+                                    <label class="form-check-label" for="sunday">Sunday</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="meeting_time" class="form-label">Meeting Time</label>
+                                <input type="time" class="form-control" id="meeting_time" name="meeting_time" 
+                                       value="{{ course.meeting_time or '' }}">
+                                <div class="form-text">Time when the course meets (if applicable)</div>
+                            </div>
+                        </div>
+
+                        <!-- Course Content -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-book-open me-2"></i>Course Content
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="syllabus" class="form-label">Syllabus</label>
+                                <textarea class="form-control" id="syllabus" name="syllabus" rows="6" placeholder="Enter course syllabus, topics, and learning objectives...">{{ course.syllabus or '' }}</textarea>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="prerequisites" class="form-label">Prerequisites</label>
+                                <textarea class="form-control" id="prerequisites" name="prerequisites" rows="3" placeholder="List any prerequisites for this course...">{{ course.prerequisites or '' }}</textarea>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label for="learning_outcomes" class="form-label">Learning Outcomes</label>
+                                <textarea class="form-control" id="learning_outcomes" name="learning_outcomes" rows="4" placeholder="What will students learn from this course?">{{ course.learning_outcomes or '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Course Settings -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-cog me-2"></i>Course Settings
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if course.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Course is active
+                                    </label>
+                                </div>
+                                <div class="form-text">Inactive courses are not visible to students.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="allow_enrollment" name="allow_enrollment" 
+                                           {% if course.allow_enrollment %}checked{% endif %}>
+                                    <label class="form-check-label" for="allow_enrollment">
+                                        Allow student enrollment
+                                    </label>
+                                </div>
+                                <div class="form-text">Students can enroll themselves in this course.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enable_quizzes" name="enable_quizzes" 
+                                           {% if course.enable_quizzes %}checked{% endif %}>
+                                    <label class="form-check-label" for="enable_quizzes">
+                                        Enable quizzes
+                                    </label>
+                                </div>
+                                <div class="form-text">Allow instructors to create quizzes for this course.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="enable_assignments" name="enable_assignments" 
+                                           {% if course.enable_assignments %}checked{% endif %}>
+                                    <label class="form-check-label" for="enable_assignments">
+                                        Enable assignments
+                                    </label>
+                                </div>
+                                <div class="form-text">Allow instructors to create assignments for this course.</div>
+                            </div>
+                        </div>
+
+                        <!-- Course Statistics -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-chart-bar me-2"></i>Course Statistics
+                                </h5>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-info">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Students</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ course.students|length if course.students else 0 }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-success">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Quizzes</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ course.quizzes|length if course.quizzes else 0 }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-warning">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Assignments</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ course.assignments|length if course.assignments else 0 }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <div class="card border-left-primary">
+                                    <div class="card-body text-center">
+                                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Created</div>
+                                        <div class="h6 mb-0 font-weight-bold text-gray-800">{{ course.created_at.strftime('%Y-%m-%d') }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('admin.courses') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>Cancel
+                                    </a>
+                                    <div>
+                                        <button type="submit" name="action" value="save_draft" class="btn btn-outline-secondary me-2">
+                                            <i class="fas fa-save me-1"></i>Save as Draft
+                                        </button>
+                                        <button type="submit" name="action" value="publish" class="btn btn-primary">
+                                            <i class="fas fa-check me-1"></i>Update Course
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Date validation
+document.getElementById('end_date').addEventListener('change', function() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = this.value;
+    
+    if (startDate && endDate && startDate > endDate) {
+        alert('End date must be after start date!');
+        this.value = '';
+    }
+});
+
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = this.value;
+    const endDate = document.getElementById('end_date').value;
+    
+    if (startDate && endDate && startDate > endDate) {
+        document.getElementById('end_date').value = '';
+    }
+});
+
+// Form validation
+document.getElementById('editCourseForm').addEventListener('submit', function(e) {
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const instructor = document.getElementById('instructor_id').value;
+    
+    if (!title) {
+        e.preventDefault();
+        alert('Course title is required!');
+        return false;
+    }
+    
+    if (!description) {
+        e.preventDefault();
+        alert('Course description is required!');
+        return false;
+    }
+    
+    if (!instructor) {
+        e.preventDefault();
+        alert('Please select an instructor!');
+        return false;
+    }
+});
+
+// Auto-save functionality
+let autoSaveTimer;
+const form = document.getElementById('editCourseForm');
+const formInputs = form.querySelectorAll('input, textarea, select');
+
+formInputs.forEach(input => {
+    input.addEventListener('input', function() {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = setTimeout(function() {
+            // You can implement auto-save functionality here
+            console.log('Auto-saving changes...');
+        }, 3000);
+    });
+});
+</script>
+{% endblock %} 
